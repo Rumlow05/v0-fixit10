@@ -253,14 +253,7 @@ const UserManagementModal = ({
   const [formData, setFormData] = useState({ id: 0, name: "", email: "", role: Role.USER })
 
   useEffect(() => {
-    console.log("[v0] UserManagementModal - User received:", user)
     setFormData({
-      id: user?.id || 0,
-      name: user?.name || "",
-      email: user?.email || "",
-      role: user?.role || Role.USER,
-    })
-    console.log("[v0] UserManagementModal - Form data set:", {
       id: user?.id || 0,
       name: user?.name || "",
       email: user?.email || "",
@@ -334,21 +327,15 @@ const UserManagementModal = ({
             <select
               id="role"
               value={formData.role}
-              onChange={(e) => {
-                console.log("[v0] Role changed from", formData.role, "to", e.target.value)
-                setFormData({ ...formData, role: e.target.value as Role })
-              }}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as Role })}
               required
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md"
             >
-              {Object.values(Role).map((r) => {
-                console.log("[v0] Available role option:", r)
-                return (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                )
-              })}
+              {Object.values(Role).map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
             </select>
           </div>
           <div className="mt-6 flex justify-end space-x-3">
@@ -745,10 +732,8 @@ const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>()
 
   useEffect(() => {
-    console.log("[v0] AssignTicketModal - Users received:", users)
     if (isOpen && users?.length > 0) {
       setSelectedUserId(users[0].id)
-      console.log("[v0] AssignTicketModal - Selected user ID set to:", users[0].id)
     }
   }, [isOpen, users])
 
@@ -756,12 +741,8 @@ const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] AssignTicketModal - Submit clicked, selectedUserId:", selectedUserId)
     if (selectedUserId) {
-      console.log("[v0] AssignTicketModal - Calling onAssign with:", selectedUserId)
       onAssign(selectedUserId)
-    } else {
-      console.log("[v0] AssignTicketModal - No user selected, cannot assign")
     }
   }
 
@@ -778,10 +759,7 @@ const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
             <select
               id="assignee"
               value={selectedUserId || ""}
-              onChange={(e) => {
-                console.log("[v0] AssignTicketModal - User selection changed to:", e.target.value)
-                setSelectedUserId(e.target.value)
-              }}
+              onChange={(e) => setSelectedUserId(e.target.value)}
               required
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md"
             >
@@ -2021,7 +1999,6 @@ const App: React.FC = () => {
     if (!selectedTicket) return
 
     try {
-      console.log("[v0] handleAssignTicket - Assigning ticket to user ID:", assigneeId)
       await handleUpdateTicket(selectedTicket.id, { assigned_to: assigneeId })
       closeAssignTicketModal()
 
@@ -2147,10 +2124,6 @@ const App: React.FC = () => {
 
   const level2Users = users.filter((u) => u.role === Role.LEVEL_2)
   const assignableUsers = users.filter((u) => [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(u.role))
-  
-  // Debug: Log para verificar usuarios asignables
-  console.log("[v0] All users:", users)
-  console.log("[v0] Assignable users:", assignableUsers)
 
   if (!currentUser) {
     return (
