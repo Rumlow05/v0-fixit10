@@ -73,6 +73,43 @@ const saveMockUsers = (users: any[]) => {
   }
 }
 
+const getMockTickets = (): any[] => {
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('fixit_mock_tickets')
+    if (stored) {
+      return JSON.parse(stored)
+    }
+  }
+  
+  // Datos iniciales por defecto
+  const defaultTickets = [
+    {
+      id: "ticket-1",
+      title: "Problema con el sistema",
+      description: "El sistema no responde correctamente",
+      status: "open",
+      priority: "high",
+      user_id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30",
+      assigned_to: null,
+      created_at: "2025-09-16T03:05:58.368131+00:00",
+      updated_at: "2025-09-16T03:05:58.368131+00:00",
+    },
+  ]
+  
+  // Guardar datos iniciales si no existen
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('fixit_mock_tickets', JSON.stringify(defaultTickets))
+  }
+  
+  return defaultTickets
+}
+
+const saveMockTickets = (tickets: any[]) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('fixit_mock_tickets', JSON.stringify(tickets))
+  }
+}
+
 const mockTickets = [
   {
     id: "ticket-1",
@@ -97,7 +134,7 @@ export function createClient(): MockSupabaseClient {
             return { data: getMockUsers(), error: null }
           }
           if (table === "tickets") {
-            return { data: mockTickets, error: null }
+            return { data: getMockTickets(), error: null }
           }
           return { data: [], error: null }
         },
@@ -123,6 +160,11 @@ export function createClient(): MockSupabaseClient {
               users.push(newItem)
               saveMockUsers(users)
             }
+            if (table === "tickets") {
+              const tickets = getMockTickets()
+              tickets.push(newItem)
+              saveMockTickets(tickets)
+            }
             return { data: newItem, error: null }
           },
         }),
@@ -141,6 +183,15 @@ export function createClient(): MockSupabaseClient {
                   return { data: users[userIndex], error: null }
                 }
               }
+              if (table === "tickets") {
+                const tickets = getMockTickets()
+                const ticketIndex = tickets.findIndex((t) => t[column as keyof typeof t] === value)
+                if (ticketIndex >= 0) {
+                  tickets[ticketIndex] = { ...tickets[ticketIndex], ...data }
+                  saveMockTickets(tickets)
+                  return { data: tickets[ticketIndex], error: null }
+                }
+              }
               return { data: null, error: null }
             },
           }),
@@ -156,6 +207,15 @@ export function createClient(): MockSupabaseClient {
               users.splice(userIndex, 1)
               saveMockUsers(users)
               console.log(`[v0] User deleted successfully. Remaining users:`, users.length)
+            }
+          }
+          if (table === "tickets") {
+            const tickets = getMockTickets()
+            const ticketIndex = tickets.findIndex((t) => t[column as keyof typeof t] === value)
+            if (ticketIndex >= 0) {
+              tickets.splice(ticketIndex, 1)
+              saveMockTickets(tickets)
+              console.log(`[v0] Ticket deleted successfully. Remaining tickets:`, tickets.length)
             }
           }
           return { error: null }

@@ -1968,10 +1968,16 @@ const App: React.FC = () => {
 
   const handleUpdateTicket = async (ticketId: string, updates: any) => {
     try {
+      console.log("[v0] handleUpdateTicket - Updating ticket:", ticketId, "with updates:", updates)
       const updatedTicket = await ticketServiceClient.updateTicket(ticketId, updates)
-      setTickets(tickets.map((t) => (t && t.id === ticketId ? updatedTicket : t)).filter(t => t))
+      console.log("[v0] handleUpdateTicket - Updated ticket received:", updatedTicket)
+      
+      const newTickets = tickets.map((t) => (t && t.id === ticketId ? updatedTicket : t)).filter(t => t)
+      console.log("[v0] handleUpdateTicket - New tickets array:", newTickets)
+      setTickets(newTickets)
 
       if (selectedTicket?.id === ticketId) {
+        console.log("[v0] handleUpdateTicket - Updating selected ticket:", updatedTicket)
         setSelectedTicket(updatedTicket)
       }
     } catch (error) {
@@ -1999,7 +2005,9 @@ const App: React.FC = () => {
     if (!selectedTicket) return
 
     try {
+      console.log("[v0] handleAssignTicket - Assigning ticket:", selectedTicket.id, "to user:", assigneeId)
       await handleUpdateTicket(selectedTicket.id, { assigned_to: assigneeId })
+      console.log("[v0] handleAssignTicket - Assignment completed, closing modal")
       closeAssignTicketModal()
 
       // Send notification email
