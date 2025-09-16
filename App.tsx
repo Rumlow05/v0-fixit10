@@ -459,6 +459,17 @@ const Sidebar = ({ currentUser, currentView, setCurrentView, onLogout, setCreate
           >
             <IconTickets /> Tickets
           </button>
+          <button
+            onClick={() => setCurrentView("resolved")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all duration-200 ${
+              currentView === "resolved" ? "bg-emerald-600 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Tickets Resueltos
+          </button>
           {currentUser.role === Role.ADMIN && (
             <button
               onClick={() => setCurrentView("users")}
@@ -1279,6 +1290,316 @@ const UserManagementView = ({
   </div>
 )
 
+const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
+  const [filteredTickets, setFilteredTickets] = useState<Ticket[]>([])
+  const [selectedResponsible, setSelectedResponsible] = useState<string>("all")
+  const [startDate, setStartDate] = useState<string>("")
+  const [endDate, setEndDate] = useState<string>("")
+
+  // Filtrar tickets resueltos
+  useEffect(() => {
+    let resolvedTickets = tickets.filter(ticket => ticket && ticket.status === Status.RESOLVED)
+    
+    // Filtrar por responsable
+    if (selectedResponsible !== "all") {
+      const responsibleId = parseInt(selectedResponsible)
+      resolvedTickets = resolvedTickets.filter(ticket => ticket.assigned_to === responsibleId)
+    }
+    
+    // Filtrar por fecha
+    if (startDate) {
+      const start = new Date(startDate)
+      resolvedTickets = resolvedTickets.filter(ticket => {
+        const ticketDate = new Date(ticket.updated_at || ticket.created_at)
+        return ticketDate >= start
+      })
+    }
+    
+    if (endDate) {
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999) // Incluir todo el día
+      resolvedTickets = resolvedTickets.filter(ticket => {
+        const ticketDate = new Date(ticket.updated_at || ticket.created_at)
+        return ticketDate <= end
+      })
+    }
+    
+    setFilteredTickets(resolvedTickets)
+  }, [tickets, selectedResponsible, startDate, endDate])
+
+  // Obtener estadísticas por responsable
+  const getStatsByResponsible = () => {
+    const stats: { [key: string]: { name: string; count: number; role: string } } = {}
+    
+    filteredTickets.forEach(ticket => {
+      if (ticket.assigned_to) {
+        const user = users.find(u => u.id === ticket.assigned_to)
+        if (user) {
+          const key = user.id.toString()
+          if (!stats[key]) {
+            stats[key] = { name: user.name, count: 0, role: user.role }
+          }
+          stats[key].count++
+        }
+      }
+    })
+    
+    return Object.values(stats).sort((a, b) => b.count - a.count)
+  }
+
+  const getUserName = (id: number | undefined) => {
+    if (!id) return "Sin Asignar"
+    const user = users.find((u) => u.id === id)
+    return user ? user.name : "Desconocido"
+  }
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case Role.ADMIN: return "bg-purple-100 text-purple-800"
+      case Role.LEVEL_1: return "bg-blue-100 text-blue-800"
+      case Role.LEVEL_2: return "bg-green-100 text-green-800"
+      default: return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString("es-ES", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    })
+  }
+
+  const stats = getStatsByResponsible()
+  const totalResolved = filteredTickets.length
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Tickets Resueltos</h2>
+        <p className="text-gray-600">Visualiza y analiza los tickets resueltos por responsable y período</p>
+      </div>
+
+      {/* Filtros */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtros</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label htmlFor="responsible" className="block text-sm font-medium text-gray-700 mb-2">
+              Responsable
+            </label>
+            <select
+              id="responsible"
+              value={selectedResponsible}
+              onChange={(e) => setSelectedResponsible(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+            >
+              <option value="all">Todos los responsables</option>
+              {users
+                .filter(user => [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(user.role))
+                .map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} ({user.role})
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
+              Fecha Inicio
+            </label>
+            <input
+              type="date"
+              id="startDate"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
+              Fecha Fin
+            </label>
+            <input
+              type="date"
+              id="endDate"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={() => {
+              setSelectedResponsible("all")
+              setStartDate("")
+              setEndDate("")
+            }}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
+          >
+            Limpiar Filtros
+          </button>
+        </div>
+      </div>
+
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Total Resueltos</p>
+              <p className="text-2xl font-semibold text-gray-900">{totalResolved}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Responsables Activos</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Promedio por Responsable</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {stats.length > 0 ? Math.round(totalResolved / stats.length) : 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Mejor Rendimiento</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {stats.length > 0 ? stats[0].name : "N/A"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Ranking de Responsables */}
+      {stats.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ranking por Responsable</h3>
+          <div className="space-y-3">
+            {stats.map((stat, index) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      index === 0 ? 'bg-yellow-100 text-yellow-800' :
+                      index === 1 ? 'bg-gray-100 text-gray-800' :
+                      index === 2 ? 'bg-orange-100 text-orange-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                      {index + 1}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{stat.name}</p>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(stat.role)}`}>
+                      {stat.role}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-semibold text-gray-900">{stat.count}</p>
+                  <p className="text-xs text-gray-500">tickets resueltos</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lista de Tickets Resueltos */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Tickets Resueltos ({totalResolved})</h3>
+        </div>
+        <div className="divide-y divide-gray-200">
+          {filteredTickets.length === 0 ? (
+            <div className="px-6 py-12 text-center">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No hay tickets resueltos</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {selectedResponsible !== "all" || startDate || endDate 
+                  ? "No se encontraron tickets con los filtros aplicados."
+                  : "Aún no hay tickets resueltos en el sistema."
+                }
+              </p>
+            </div>
+          ) : (
+            filteredTickets.map((ticket) => (
+              <div key={ticket.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h4 className="text-sm font-medium text-gray-900 truncate">#{ticket.id} - {ticket.title}</h4>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Resuelto
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-2 line-clamp-2">{ticket.description}</p>
+                    <div className="flex items-center space-x-4 text-xs text-gray-500">
+                      <span>Resuelto por: <span className="font-medium">{getUserName(ticket.assigned_to)}</span></span>
+                      <span>•</span>
+                      <span>Resuelto: {formatDate(ticket.updated_at || ticket.created_at)}</span>
+                      <span>•</span>
+                      <span>Prioridad: <span className="font-medium">{ticket.priority}</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const App: React.FC = () => {
   // --- State Management ---
   const [users, setUsers] = useState<User[]>([])
@@ -1297,7 +1618,7 @@ const App: React.FC = () => {
   const [isLoadingUsers, setIsLoadingUsers] = useState(true)
   const [isLoadingTickets, setIsLoadingTickets] = useState(true)
 
-  const [currentView, setCurrentView] = useState<"tickets" | "users">("tickets")
+  const [currentView, setCurrentView] = useState<"tickets" | "users" | "resolved">("tickets")
   const [loginEmail, setLoginEmail] = useState("")
   const [loginError, setLoginError] = useState("")
   const [showRoleSelection, setShowRoleSelection] = useState(false)
@@ -1885,6 +2206,12 @@ const App: React.FC = () => {
               setAssignTicketModalOpen={setAssignTicketModalOpen}
               onAddCommentModalOpen={openAddCommentModal}
               setAddCommentModalOpen={setAddCommentModalOpen}
+            />
+          ) : currentView === "resolved" ? (
+            <ResolvedTicketsView
+              tickets={tickets}
+              users={users}
+              currentUser={currentUser}
             />
           ) : (
             <UserManagementView
