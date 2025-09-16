@@ -1630,11 +1630,15 @@ const App: React.FC = () => {
       closeCreateTicketModal() // Use the proper function name
 
       // Send notification email (existing functionality)
-      await sendEmailNotification("new_ticket", {
-        ticketTitle: newTicket.title,
-        ticketId: newTicket.id,
-        userName: currentUser.name,
-      })
+      await sendEmailNotification("ticket-created", {
+        ticketId: newTicket.id.toString(),
+        title: newTicket.title,
+        description: newTicket.description,
+        priority: newTicket.priority,
+        status: newTicket.status,
+        createdBy: currentUser.name,
+        createdAt: newTicket.created_at,
+      }, currentUser.email)
     } catch (error) {
       console.error("[v0] Error creating ticket:", error)
       alert("Error al crear ticket. Por favor intenta de nuevo.")
@@ -1681,13 +1685,19 @@ const App: React.FC = () => {
       const assignee = users.find((u) => u.id === assigneeId)
       if (assignee) {
         await sendEmailNotification(
-          "ticket_assigned",
+          "ticket-updated",
           {
-            ticketTitle: selectedTicket.title,
-            ticketId: selectedTicket.id,
-            assigneeName: assignee.name,
+            ticketId: selectedTicket.id.toString(),
+            title: selectedTicket.title,
+            description: selectedTicket.description,
+            priority: selectedTicket.priority,
+            status: selectedTicket.status,
+            assignedTo: assignee.name,
+            createdBy: users.find(u => u.id === selectedTicket.created_by)?.name || "Desconocido",
+            createdAt: selectedTicket.created_at,
           },
           assignee.email,
+          "Asignación de ticket"
         )
       }
     } catch (error) {
@@ -1705,13 +1715,18 @@ const App: React.FC = () => {
       const requester = users.find((u) => u.id === ticket?.created_by)
       if (ticket && requester) {
         await sendEmailNotification(
-          "ticket_resolved",
+          "ticket-updated",
           {
-            ticketTitle: ticket.title,
-            ticketId: ticket.id,
-            status,
+            ticketId: ticket.id.toString(),
+            title: ticket.title,
+            description: ticket.description,
+            priority: ticket.priority,
+            status: status,
+            createdBy: requester.name,
+            createdAt: ticket.created_at,
           },
           requester.email,
+          "Resolución de ticket"
         )
       }
     } catch (error) {
@@ -1754,13 +1769,19 @@ const App: React.FC = () => {
       const assignee = users.find((u) => u.id === assigneeId)
       if (assignee) {
         await sendEmailNotification(
-          "ticket_transferred",
+          "ticket-updated",
           {
-            ticketTitle: selectedTicket.title,
-            ticketId: selectedTicket.id,
-            assigneeName: assignee.name,
+            ticketId: selectedTicket.id.toString(),
+            title: selectedTicket.title,
+            description: selectedTicket.description,
+            priority: selectedTicket.priority,
+            status: selectedTicket.status,
+            assignedTo: assignee.name,
+            createdBy: users.find(u => u.id === selectedTicket.created_by)?.name || "Desconocido",
+            createdAt: selectedTicket.created_at,
           },
           assignee.email,
+          "Transferencia de ticket a Nivel 2"
         )
       }
     } catch (error) {
