@@ -86,4 +86,4 @@ Puedes personalizar las plantillas de email editando el archivo `services/emailS
 - Agregar nuevos tipos de notificaciones
 \`\`\`
 
-```json file="" isHidden
+\`\`\`json file="" isHidden
