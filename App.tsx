@@ -253,7 +253,14 @@ const UserManagementModal = ({
   const [formData, setFormData] = useState({ id: 0, name: "", email: "", role: Role.USER })
 
   useEffect(() => {
+    console.log("[v0] UserManagementModal - User received:", user)
     setFormData({
+      id: user?.id || 0,
+      name: user?.name || "",
+      email: user?.email || "",
+      role: user?.role || Role.USER,
+    })
+    console.log("[v0] UserManagementModal - Form data set:", {
       id: user?.id || 0,
       name: user?.name || "",
       email: user?.email || "",
@@ -327,15 +334,21 @@ const UserManagementModal = ({
             <select
               id="role"
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as Role })}
+              onChange={(e) => {
+                console.log("[v0] Role changed from", formData.role, "to", e.target.value)
+                setFormData({ ...formData, role: e.target.value as Role })
+              }}
               required
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md"
             >
-              {Object.values(Role).map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
+              {Object.values(Role).map((r) => {
+                console.log("[v0] Available role option:", r)
+                return (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                )
+              })}
             </select>
           </div>
           <div className="mt-6 flex justify-end space-x-3">
