@@ -365,10 +365,10 @@ const TransferToLevel2Modal = ({
   onTransfer,
   level2Users,
 }: { isOpen: boolean; onClose: () => void; onTransfer: (userId: number) => void; level2Users: User[] }) => {
-  const [selectedUserId, setSelectedUserId] = useState<number | undefined>(level2Users[0]?.id)
+  const [selectedUserId, setSelectedUserId] = useState<number | undefined>(level2Users?.[0]?.id)
 
   useEffect(() => {
-    if (isOpen && level2Users.length > 0 && !selectedUserId) {
+    if (isOpen && level2Users?.length > 0 && !selectedUserId) {
       setSelectedUserId(level2Users[0].id)
     }
   }, [isOpen, level2Users, selectedUserId])
@@ -398,7 +398,7 @@ const TransferToLevel2Modal = ({
               required
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
             >
-              {level2Users.map((u) => (
+              {(level2Users || []).map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name}
                 </option>
@@ -721,7 +721,7 @@ const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
   const [selectedUserId, setSelectedUserId] = useState<number | undefined>()
 
   useEffect(() => {
-    if (isOpen && users.length > 0) {
+    if (isOpen && users?.length > 0) {
       setSelectedUserId(users[0].id)
     }
   }, [isOpen, users])
@@ -752,7 +752,7 @@ const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
               required
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
             >
-              {users.map((u) => (
+              {(users || []).map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name} ({u.role})
                 </option>
@@ -1050,8 +1050,8 @@ const TicketsView = ({
                 )}
               </div>
               <div className="space-y-4 max-h-60 overflow-y-auto">
-                {selectedTicket.comments.length > 0 ? (
-                  selectedTicket.comments
+                {(selectedTicket.comments || []).length > 0 ? (
+                  (selectedTicket.comments || [])
                     .slice()
                     .reverse()
                     .map((comment) => (
@@ -1255,7 +1255,7 @@ const UserManagementView = ({
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {users.map((user) => (
+          {(users || []).map((user) => (
             <tr key={user.id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
