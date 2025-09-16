@@ -732,6 +732,7 @@ const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
   const [selectedUserId, setSelectedUserId] = useState<number | undefined>()
 
   useEffect(() => {
+    console.log("[v0] AssignTicketModal - Users received:", users)
     if (isOpen && users?.length > 0) {
       setSelectedUserId(users[0].id)
     }
@@ -2123,7 +2124,11 @@ const App: React.FC = () => {
   }
 
   const level2Users = users.filter((u) => u.role === Role.LEVEL_2)
-  const assignableUsers = users.filter((u) => [Role.LEVEL_1, Role.LEVEL_2].includes(u.role))
+  const assignableUsers = users.filter((u) => [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(u.role))
+  
+  // Debug: Log para verificar usuarios asignables
+  console.log("[v0] All users:", users)
+  console.log("[v0] Assignable users:", assignableUsers)
 
   if (!currentUser) {
     return (
