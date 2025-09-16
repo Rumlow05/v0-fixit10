@@ -1282,8 +1282,11 @@ const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([])
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem("fixit_currentUser")
-    return savedUser ? JSON.parse(savedUser) : null
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem("fixit_currentUser")
+      return savedUser ? JSON.parse(savedUser) : null
+    }
+    return null
   })
 
   const [databaseReady, setDatabaseReady] = useState(false)
@@ -1366,10 +1369,12 @@ const App: React.FC = () => {
   }, [databaseReady])
 
   useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem("fixit_currentUser", JSON.stringify(currentUser))
-    } else {
-      localStorage.removeItem("fixit_currentUser")
+    if (typeof window !== 'undefined') {
+      if (currentUser) {
+        localStorage.setItem("fixit_currentUser", JSON.stringify(currentUser))
+      } else {
+        localStorage.removeItem("fixit_currentUser")
+      }
     }
   }, [currentUser])
 

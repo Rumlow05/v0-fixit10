@@ -22,21 +22,27 @@ class EmailService {
   private transporter: nodemailer.Transporter
 
   constructor() {
-    this.transporter = nodemailer.createTransporter({
-      host: "smtp.hostinger.com",
-      port: 465,
-      secure: true, // true for 465, false for other ports
-      auth: {
-        user: process.env.HOSTINGER_EMAIL_USER,
-        pass: process.env.HOSTINGER_EMAIL_PASS,
-      },
-    })
+    // Solo crear el transporter si las credenciales están disponibles
+    if (process.env.HOSTINGER_EMAIL_USER && process.env.HOSTINGER_EMAIL_PASS) {
+      this.transporter = nodemailer.createTransport({
+        host: "smtp.hostinger.com",
+        port: 465,
+        secure: true, // true for 465, false for other ports
+        auth: {
+          user: process.env.HOSTINGER_EMAIL_USER,
+          pass: process.env.HOSTINGER_EMAIL_PASS,
+        },
+      })
+    } else {
+      // Crear un transporter mock para evitar errores durante el build
+      this.transporter = null as any
+    }
   }
 
   private async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-      if (!process.env.HOSTINGER_EMAIL_USER || !process.env.HOSTINGER_EMAIL_PASS) {
-        console.warn("[EmailService] Email credentials not configured")
+      if (!this.transporter || !process.env.HOSTINGER_EMAIL_USER || !process.env.HOSTINGER_EMAIL_PASS) {
+        console.warn("[EmailService] Email credentials not configured or transporter not available")
         return false
       }
 
