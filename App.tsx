@@ -870,14 +870,14 @@ const TicketsView = ({
   const canResolve = [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role)
   const canCreate = true
 
-  const filteredTickets = isUserRole ? tickets.filter((t) => t.requesterId === currentUser.id) : tickets
+  const filteredTickets = isUserRole ? tickets.filter((t) => t && t.requesterId === currentUser.id) : tickets.filter((t) => t)
 
   const stats = {
     total: filteredTickets.length,
-    open: filteredTickets.filter((t) => t.status === Status.OPEN).length,
-    inProgress: filteredTickets.filter((t) => t.status === Status.IN_PROGRESS).length,
-    resolved: filteredTickets.filter((t) => t.status === Status.RESOLVED).length,
-    high: filteredTickets.filter((t) => t.priority === Priority.HIGH || t.priority === Priority.CRITICAL).length,
+    open: filteredTickets.filter((t) => t && t.status === Status.OPEN).length,
+    inProgress: filteredTickets.filter((t) => t && t.status === Status.IN_PROGRESS).length,
+    resolved: filteredTickets.filter((t) => t && t.status === Status.RESOLVED).length,
+    high: filteredTickets.filter((t) => t && (t.priority === Priority.HIGH || t.priority === Priority.CRITICAL)).length,
   }
 
   const getPriorityColor = (priority: Priority) => {
@@ -947,33 +947,35 @@ const TicketsView = ({
           </div>
         </div>
         <div className="p-2">
-          {filteredTickets.map((ticket) => (
-            <div
-              key={ticket.id}
-              onClick={() => onSelectTicket(ticket)}
-              className={`p-4 m-2 rounded-xl cursor-pointer transition-all duration-200 border ${
-                selectedTicket?.id === ticket.id
-                  ? "bg-primary/5 border-primary shadow-lg"
-                  : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-md"
-              }`}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-gray-900 text-sm leading-tight">{ticket.title}</h3>
-                <span className="text-xs text-gray-500">#{ticket.id}</span>
+          {filteredTickets.map((ticket) => 
+            ticket ? (
+              <div
+                key={ticket.id}
+                onClick={() => onSelectTicket(ticket)}
+                className={`p-4 m-2 rounded-xl cursor-pointer transition-all duration-200 border ${
+                  selectedTicket?.id === ticket.id
+                    ? "bg-primary/5 border-primary shadow-lg"
+                    : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-md"
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold text-gray-900 text-sm leading-tight">{ticket.title}</h3>
+                  <span className="text-xs text-gray-500">#{ticket.id}</span>
+                </div>
+                <div className="flex gap-2 mb-2">
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-lg border ${getPriorityColor(ticket.priority)}`}
+                  >
+                    {ticket.priority}
+                  </span>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-lg border ${getStatusColor(ticket.status)}`}>
+                    {ticket.status}
+                  </span>
+                </div>
+                {!isUserRole && <p className="text-xs text-gray-500">Solicitante: {getUserName(ticket.requesterId)}</p>}
               </div>
-              <div className="flex gap-2 mb-2">
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${getPriorityColor(ticket.priority)}`}
-                >
-                  {ticket.priority}
-                </span>
-                <span className={`px-2 py-1 text-xs font-medium rounded-lg border ${getStatusColor(ticket.status)}`}>
-                  {ticket.status}
-                </span>
-              </div>
-              {!isUserRole && <p className="text-xs text-gray-500">Solicitante: {getUserName(ticket.requesterId)}</p>}
-            </div>
-          ))}
+            ) : null
+          )}
         </div>
       </div>
 
