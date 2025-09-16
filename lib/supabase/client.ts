@@ -30,25 +30,48 @@ interface MockSupabaseClient {
   }
 }
 
-// Mock data
-const mockUsers = [
-  {
-    id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30",
-    email: "admin@fixit.com",
-    name: "Administrador",
-    role: "admin",
-    created_at: "2025-09-16T03:05:58.368131+00:00",
-    updated_at: "2025-09-16T03:05:58.368131+00:00",
-  },
-  {
-    id: "user-2",
-    email: "user@fixit.com",
-    name: "Usuario Test",
-    role: "level1",
-    created_at: "2025-09-16T03:05:58.368131+00:00",
-    updated_at: "2025-09-16T03:05:58.368131+00:00",
-  },
-]
+// Mock data - usando localStorage para persistencia
+const getMockUsers = (): any[] => {
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('fixit_mock_users')
+    if (stored) {
+      return JSON.parse(stored)
+    }
+  }
+  
+  // Datos iniciales por defecto
+  const defaultUsers = [
+    {
+      id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30",
+      email: "admin@fixit.com",
+      name: "Administrador",
+      role: "admin",
+      created_at: "2025-09-16T03:05:58.368131+00:00",
+      updated_at: "2025-09-16T03:05:58.368131+00:00",
+    },
+    {
+      id: "user-2",
+      email: "user@fixit.com",
+      name: "Usuario Test",
+      role: "level1",
+      created_at: "2025-09-16T03:05:58.368131+00:00",
+      updated_at: "2025-09-16T03:05:58.368131+00:00",
+    },
+  ]
+  
+  // Guardar datos iniciales si no existen
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('fixit_mock_users', JSON.stringify(defaultUsers))
+  }
+  
+  return defaultUsers
+}
+
+const saveMockUsers = (users: any[]) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('fixit_mock_users', JSON.stringify(users))
+  }
+}
 
 const mockTickets = [
   {
@@ -71,7 +94,7 @@ export function createClient(): MockSupabaseClient {
         order: async (column: string, options?: any) => {
           console.log(`[v0] Mock query: SELECT ${columns} FROM ${table} ORDER BY ${column}`)
           if (table === "users") {
-            return { data: mockUsers, error: null }
+            return { data: getMockUsers(), error: null }
           }
           if (table === "tickets") {
             return { data: mockTickets, error: null }
@@ -82,7 +105,8 @@ export function createClient(): MockSupabaseClient {
           single: async () => {
             console.log(`[v0] Mock query: SELECT ${columns} FROM ${table} WHERE ${column} = ${value}`)
             if (table === "users") {
-              const user = mockUsers.find((u) => u[column as keyof typeof u] === value)
+              const users = getMockUsers()
+              const user = users.find((u) => u[column as keyof typeof u] === value)
               return { data: user || null, error: null }
             }
             return { data: null, error: null }
@@ -95,7 +119,9 @@ export function createClient(): MockSupabaseClient {
             console.log(`[v0] Mock insert into ${table}:`, data)
             const newItem = { ...data[0], id: `${table}-${Date.now()}` }
             if (table === "users") {
-              mockUsers.push(newItem)
+              const users = getMockUsers()
+              users.push(newItem)
+              saveMockUsers(users)
             }
             return { data: newItem, error: null }
           },
@@ -107,10 +133,12 @@ export function createClient(): MockSupabaseClient {
             single: async () => {
               console.log(`[v0] Mock update ${table} SET ${JSON.stringify(data)} WHERE ${column} = ${value}`)
               if (table === "users") {
-                const userIndex = mockUsers.findIndex((u) => u[column as keyof typeof u] === value)
+                const users = getMockUsers()
+                const userIndex = users.findIndex((u) => u[column as keyof typeof u] === value)
                 if (userIndex >= 0) {
-                  mockUsers[userIndex] = { ...mockUsers[userIndex], ...data }
-                  return { data: mockUsers[userIndex], error: null }
+                  users[userIndex] = { ...users[userIndex], ...data }
+                  saveMockUsers(users)
+                  return { data: users[userIndex], error: null }
                 }
               }
               return { data: null, error: null }
@@ -122,9 +150,12 @@ export function createClient(): MockSupabaseClient {
         eq: async (column: string, value: any) => {
           console.log(`[v0] Mock delete from ${table} WHERE ${column} = ${value}`)
           if (table === "users") {
-            const userIndex = mockUsers.findIndex((u) => u[column as keyof typeof u] === value)
+            const users = getMockUsers()
+            const userIndex = users.findIndex((u) => u[column as keyof typeof u] === value)
             if (userIndex >= 0) {
-              mockUsers.splice(userIndex, 1)
+              users.splice(userIndex, 1)
+              saveMockUsers(users)
+              console.log(`[v0] User deleted successfully. Remaining users:`, users.length)
             }
           }
           return { error: null }
