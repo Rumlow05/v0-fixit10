@@ -65,6 +65,10 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     throw new Error("Error al buscar usuario por email")
   }
 
+  if (!data) {
+    return null
+  }
+
   return {
     ...data,
     role: getRoleEnumValue(data.role),
@@ -195,6 +199,10 @@ export const userServiceClient = {
       throw new Error("Error al buscar usuario por email")
     }
 
+    if (!data) {
+      return null
+    }
+
     return {
       ...data,
       role: getRoleEnumValue(data.role),
@@ -263,7 +271,14 @@ export const userServiceClient = {
       throw new Error("Error al obtener usuario")
     }
 
-    return data
+    if (!data) {
+      return null
+    }
+
+    return {
+      ...data,
+      role: getRoleEnumValue(data.role),
+    }
   },
 
   async deleteUser(id: string): Promise<void> {
