@@ -155,7 +155,7 @@ function getRoleEnumValue(dbRole: string): Role {
     case "admin":
       return Role.ADMIN // 'Administrador'
     case "level1":
-      return Role.USER // 'Usuario' - mapping level1 back to Usuario for display
+      return Role.LEVEL_1 // 'Nivel 1' - corregido para mantener el rol correcto
     case "level2":
       return Role.LEVEL_2 // 'Nivel 2'
     default:
