@@ -1969,7 +1969,7 @@ const App: React.FC = () => {
   const handleUpdateTicket = async (ticketId: string, updates: any) => {
     try {
       const updatedTicket = await ticketServiceClient.updateTicket(ticketId, updates)
-      setTickets(tickets.map((t) => (t.id === ticketId ? updatedTicket : t)))
+      setTickets(tickets.map((t) => (t && t.id === ticketId ? updatedTicket : t)).filter(t => t))
 
       if (selectedTicket?.id === ticketId) {
         setSelectedTicket(updatedTicket)
@@ -1984,7 +1984,7 @@ const App: React.FC = () => {
     if (window.confirm("¿Estás seguro de que quieres eliminar este ticket?")) {
       try {
         await ticketServiceClient.deleteTicket(ticketId)
-        setTickets(tickets.filter((t) => t.id !== ticketId))
+        setTickets(tickets.filter((t) => t && t.id !== ticketId))
         if (selectedTicket?.id === ticketId) {
           setSelectedTicket(null)
         }
@@ -2032,7 +2032,7 @@ const App: React.FC = () => {
       await handleUpdateTicket(ticketId, { status })
 
       // Send notification email
-      const ticket = tickets.find((t) => t.id === ticketId)
+      const ticket = tickets.find((t) => t && t.id === ticketId)
       const requester = users.find((u) => u.id === ticket?.created_by)
       if (ticket && requester) {
         await sendEmailNotification(
