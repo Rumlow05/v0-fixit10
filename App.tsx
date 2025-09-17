@@ -894,12 +894,13 @@ const TicketsView = ({
   const canUseAI = [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role)
   const canAssign = currentUser.role === Role.ADMIN
   const canResolve = [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role)
+  const canAddComment = true // Todos los usuarios pueden agregar comentarios
   const canCreate = true
 
-  // Filtrar tickets activos (excluir resueltos y cerrados)
+  // Filtrar tickets: usuarios ven todos sus tickets, otros roles ven solo activos
   const filteredTickets = isUserRole 
-    ? tickets.filter((t) => t && t.requesterId === currentUser.id && t.status !== Status.RESOLVED && t.status !== Status.CLOSED)
-    : tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED)
+    ? tickets.filter((t) => t && t.requesterId === currentUser.id) // Usuarios ven TODOS sus tickets
+    : tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED) // Otros roles ven solo activos
   
   console.log("[v0] MainView - All tickets:", tickets.length)
   console.log("[v0] MainView - Filtered tickets (active only):", filteredTickets.length)
@@ -914,6 +915,7 @@ const TicketsView = ({
     total: filteredTickets.length,
     open: filteredTickets.filter((t) => t && t.status === Status.OPEN).length,
     inProgress: filteredTickets.filter((t) => t && t.status === Status.IN_PROGRESS).length,
+    resolved: filteredTickets.filter((t) => t && (t.status === Status.RESOLVED || t.status === Status.CLOSED)).length,
     high: filteredTickets.filter((t) => t && (t.priority === Priority.HIGH || t.priority === Priority.CRITICAL)).length,
   }
 
@@ -953,7 +955,7 @@ const TicketsView = ({
       <div className="col-span-3 bg-white border-r border-gray-200 overflow-y-auto">
         <div className="p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">{isUserRole ? "Mis Tickets" : "Todos los Tickets"}</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{isUserRole ? "Mis Solicitudes" : "Todos los Tickets"}</h2>
             <div className="flex gap-3">
               {canUseAI && (
                 <button
@@ -978,7 +980,7 @@ const TicketsView = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid gap-3 ${isUserRole ? 'grid-cols-2' : 'grid-cols-2'}`}>
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
               <div className="text-2xl font-bold text-blue-900">{stats.total}</div>
               <div className="text-sm text-blue-700 font-medium">Total</div>
@@ -991,10 +993,18 @@ const TicketsView = ({
               <div className="text-2xl font-bold text-orange-900">{stats.inProgress}</div>
               <div className="text-sm text-orange-700 font-medium">En Progreso</div>
             </div>
-            <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl border border-red-200">
-              <div className="text-2xl font-bold text-red-900">{stats.high}</div>
-              <div className="text-sm text-red-700 font-medium">Alta Prioridad</div>
-            </div>
+            {isUserRole && (
+              <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+                <div className="text-2xl font-bold text-green-900">{stats.resolved}</div>
+                <div className="text-sm text-green-700 font-medium">Resueltos</div>
+              </div>
+            )}
+            {!isUserRole && (
+              <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl border border-red-200">
+                <div className="text-2xl font-bold text-red-900">{stats.high}</div>
+                <div className="text-sm text-red-700 font-medium">Alta Prioridad</div>
+              </div>
+            )}
           </div>
         </div>
         <div className="p-2">
@@ -1071,7 +1081,12 @@ const TicketsView = ({
                   </div>
                   <div>
                     <span className="text-gray-600">Asignado a:</span>{" "}
-                    <span className="font-medium">{getUserName(selectedTicket.assigned_to)}</span>
+                    <span className="font-medium">
+                      {selectedTicket.assigned_to ? 
+                        `${getUserName(selectedTicket.assigned_to)} (${users.find(u => u.id === selectedTicket.assigned_to)?.role || 'Desconocido'})` 
+                        : 'Sin Asignar'
+                      }
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1080,11 +1095,11 @@ const TicketsView = ({
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-600">Creado:</span>{" "}
-                    <span className="font-medium">{new Date(selectedTicket.createdAt).toLocaleDateString()}</span>
+                    <span className="font-medium">{new Date(selectedTicket.created_at).toLocaleDateString()}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Actualizado:</span>{" "}
-                    <span className="font-medium">{new Date(selectedTicket.updatedAt).toLocaleDateString()}</span>
+                    <span className="font-medium">{new Date(selectedTicket.updated_at).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
@@ -1093,7 +1108,7 @@ const TicketsView = ({
             <div className="border border-gray-200 rounded-xl p-6">
               <div className="flex justify-between items-center mb-4">
                 <h4 className="text-lg font-semibold text-gray-900">Historial de Actividad</h4>
-                {canResolve && (
+                {canAddComment && (
                   <button
                     onClick={() => setAddCommentModalOpen(true)}
                     className="px-4 py-2 text-sm font-semibold text-white bg-accent rounded-xl hover:bg-accent/90 transition-all duration-200"
