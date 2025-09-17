@@ -1341,6 +1341,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
   // Filtrar tickets resueltos
   useEffect(() => {
     console.log("[v0] ResolvedTicketsView - All tickets:", tickets)
+    console.log("[v0] ResolvedTicketsView - Current user:", currentUser)
     console.log("[v0] ResolvedTicketsView - Status.RESOLVED value:", Status.RESOLVED)
     console.log("[v0] ResolvedTicketsView - Status enum values:", {
       OPEN: Status.OPEN,
@@ -1349,17 +1350,36 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
       CLOSED: Status.CLOSED
     })
     
+    // Filtrar por rol: Usuarios solo ven sus propios tickets, otros roles ven todos
+    const isUserRole = currentUser.role === Role.USER
+    
     // Incluir tanto tickets resueltos como cerrados
     let resolvedTickets = tickets.filter(ticket => {
       const isResolved = ticket && (ticket.status === Status.RESOLVED || ticket.status === Status.CLOSED)
-      console.log("[v0] ResolvedTicketsView - Checking ticket:", {
-        id: ticket?.id,
-        title: ticket?.title,
-        status: ticket?.status,
-        statusType: typeof ticket?.status,
-        isResolved: isResolved
-      })
-      return isResolved
+      
+      // Si es usuario, solo mostrar sus propios tickets
+      if (isUserRole) {
+        const isOwnTicket = ticket.requesterId === currentUser.id
+        console.log("[v0] ResolvedTicketsView - User role - Checking ticket:", {
+          id: ticket?.id,
+          title: ticket?.title,
+          status: ticket?.status,
+          requesterId: ticket?.requesterId,
+          currentUserId: currentUser.id,
+          isResolved: isResolved,
+          isOwnTicket: isOwnTicket
+        })
+        return isResolved && isOwnTicket
+      } else {
+        // Otros roles ven todos los tickets resueltos
+        console.log("[v0] ResolvedTicketsView - Admin/Technical role - Checking ticket:", {
+          id: ticket?.id,
+          title: ticket?.title,
+          status: ticket?.status,
+          isResolved: isResolved
+        })
+        return isResolved
+      }
     })
     console.log("[v0] ResolvedTicketsView - Resolved tickets found:", resolvedTickets.length, resolvedTickets)
     
@@ -1449,38 +1469,46 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
 
   const stats = getStatsByResponsible()
   const totalResolved = filteredTickets.length
+  const isUserRole = currentUser.role === Role.USER
 
   return (
     <div className="p-6 h-full overflow-y-auto">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Tickets Resueltos</h2>
-        <p className="text-gray-600">Visualiza y analiza los tickets resueltos por responsable y período</p>
+        <p className="text-gray-600">
+          {isUserRole 
+            ? "Visualiza tus tickets resueltos y cerrados" 
+            : "Visualiza y analiza los tickets resueltos por responsable y período"
+          }
+        </p>
       </div>
 
       {/* Filtros */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtros</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label htmlFor="responsible" className="block text-sm font-medium text-gray-700 mb-2">
-              Responsable
-            </label>
-            <select
-              id="responsible"
-              value={selectedResponsible}
-              onChange={(e) => setSelectedResponsible(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-            >
-              <option value="all">Todos los responsables</option>
-              {users
-                .filter(user => [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(user.role))
-                .map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name} ({user.role})
-                  </option>
-                ))}
-            </select>
-          </div>
+        <div className={`grid grid-cols-1 gap-4 ${isUserRole ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+          {!isUserRole && (
+            <div>
+              <label htmlFor="responsible" className="block text-sm font-medium text-gray-700 mb-2">
+                Responsable
+              </label>
+              <select
+                id="responsible"
+                value={selectedResponsible}
+                onChange={(e) => setSelectedResponsible(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+              >
+                <option value="all">Todos los responsables</option>
+                {users
+                  .filter(user => [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(user.role))
+                  .map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.role})
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
           <div>
             <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
               Fecha Inicio
@@ -1521,7 +1549,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className={`grid grid-cols-1 gap-4 mb-6 ${isUserRole ? 'md:grid-cols-2 lg:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -1532,67 +1560,105 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Resueltos</p>
+              <p className="text-sm font-medium text-gray-500">
+                {isUserRole ? "Mis Tickets Resueltos" : "Total Resueltos"}
+              </p>
               <p className="text-2xl font-semibold text-gray-900">{totalResolved}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+        {!isUserRole && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Responsables Activos</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.length}</p>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Responsables Activos</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.length}</p>
-            </div>
           </div>
-        </div>
+        )}
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+        {!isUserRole && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Promedio por Responsable</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {stats.length > 0 ? Math.round(totalResolved / stats.length) : 0}
+                </p>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Promedio por Responsable</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {stats.length > 0 ? Math.round(totalResolved / stats.length) : 0}
-              </p>
-            </div>
           </div>
-        </div>
+        )}
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
+        {!isUserRole && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Mejor Rendimiento</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {stats.length > 0 ? stats[0].name : "N/A"}
+                </p>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Mejor Rendimiento</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {stats.length > 0 ? stats[0].name : "N/A"}
-              </p>
+          </div>
+        )}
+
+        {isUserRole && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Tiempo Promedio</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {(() => {
+                    if (filteredTickets.length === 0) return "N/A"
+                    const totalDays = filteredTickets.reduce((acc, ticket) => {
+                      const created = new Date(ticket.created_at)
+                      const updated = new Date(ticket.updated_at || ticket.created_at)
+                      const diffTime = Math.abs(updated.getTime() - created.getTime())
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                      return acc + diffDays
+                    }, 0)
+                    return `${Math.round(totalDays / filteredTickets.length)} días`
+                  })()}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Ranking de Responsables */}
-      {stats.length > 0 && (
+      {/* Ranking de Responsables - Solo para roles técnicos y admin */}
+      {!isUserRole && stats.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Ranking por Responsable</h3>
           <div className="space-y-3">
@@ -1642,11 +1708,17 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No hay tickets resueltos</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                {isUserRole ? "No tienes tickets resueltos" : "No hay tickets resueltos"}
+              </h3>
               <p className="mt-1 text-sm text-gray-500">
-                {selectedResponsible !== "all" || startDate || endDate 
-                  ? "No se encontraron tickets con los filtros aplicados."
-                  : "Aún no hay tickets resueltos en el sistema."
+                {isUserRole 
+                  ? (startDate || endDate 
+                      ? "No se encontraron tickets con los filtros aplicados."
+                      : "Aún no tienes tickets resueltos o cerrados.")
+                  : (selectedResponsible !== "all" || startDate || endDate 
+                      ? "No se encontraron tickets con los filtros aplicados."
+                      : "Aún no hay tickets resueltos en el sistema.")
                 }
               </p>
             </div>
@@ -1663,11 +1735,21 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
                     </div>
                     <p className="text-sm text-gray-500 mb-2 line-clamp-2">{ticket.description}</p>
                     <div className="flex items-center space-x-4 text-xs text-gray-500">
-                      <span>Resuelto por: <span className="font-medium">{getUserName(ticket.assigned_to)}</span></span>
-                      <span>•</span>
+                      {!isUserRole && (
+                        <>
+                          <span>Resuelto por: <span className="font-medium">{getUserName(ticket.assigned_to)}</span></span>
+                          <span>•</span>
+                        </>
+                      )}
                       <span>Resuelto: {formatDate(ticket.updated_at || ticket.created_at)}</span>
                       <span>•</span>
                       <span>Prioridad: <span className="font-medium">{ticket.priority}</span></span>
+                      {isUserRole && (
+                        <>
+                          <span>•</span>
+                          <span>Asignado a: <span className="font-medium">{getUserName(ticket.assigned_to)}</span></span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
