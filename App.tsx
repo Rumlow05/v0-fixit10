@@ -1329,6 +1329,8 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
   const [selectedResponsible, setSelectedResponsible] = useState<string>("all")
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
+  const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState(false)
+  const [selectedResponsibleData, setSelectedResponsibleData] = useState<{name: string, id: string, role: string} | null>(null)
 
   // Filtrar tickets resueltos
   useEffect(() => {
@@ -1424,6 +1426,16 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
       hour: "2-digit",
       minute: "2-digit"
     })
+  }
+
+  const handleResponsibleClick = (responsible: {name: string, id: string, role: string}) => {
+    setSelectedResponsibleData(responsible)
+    setIsResponsibleModalOpen(true)
+  }
+
+  const closeResponsibleModal = () => {
+    setIsResponsibleModalOpen(false)
+    setSelectedResponsibleData(null)
   }
 
   const stats = getStatsByResponsible()
@@ -1576,7 +1588,12 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Ranking por Responsable</h3>
           <div className="space-y-3">
             {stats.map((stat, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div 
+                key={index} 
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                onClick={() => handleResponsibleClick(stat)}
+                title="Click para ver tickets resueltos"
+              >
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -1650,6 +1667,90 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
           )}
         </div>
       </div>
+
+      {/* Modal de Tickets del Responsable */}
+      {isResponsibleModalOpen && selectedResponsibleData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Tickets Resueltos - {selectedResponsibleData.name}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {selectedResponsibleData.role} • {filteredTickets.filter(t => t.assigned_to === selectedResponsibleData.id).length} tickets resueltos
+                  </p>
+                </div>
+                <button
+                  onClick={closeResponsibleModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {filteredTickets.filter(t => t.assigned_to === selectedResponsibleData.id).length > 0 ? (
+                <div className="space-y-4">
+                  {filteredTickets
+                    .filter(t => t.assigned_to === selectedResponsibleData.id)
+                    .map((ticket) => (
+                      <div key={ticket.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="text-lg font-semibold text-gray-900 mb-2">{ticket.title}</h4>
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-3">{ticket.description}</p>
+                            
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Resuelto: {formatDate(ticket.updated_at || ticket.created_at)}
+                              </span>
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                                Prioridad: <span className="font-medium ml-1">{ticket.priority}</span>
+                              </span>
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Status: <span className="font-medium ml-1 text-green-600">{ticket.status}</span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p className="text-gray-500">No hay tickets resueltos para este responsable</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={closeResponsibleModal}
+                className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
