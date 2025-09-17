@@ -825,6 +825,8 @@ const ChangePriorityModal = ({
 
   if (!isOpen) return null
 
+  console.log("[v0] ChangePriorityModal is open, currentPriority:", currentPriority)
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onPriorityChange(selectedPriority)
@@ -1265,9 +1267,14 @@ const TicketsView = ({
                   </button>
                 )}
 
-                {canResolve && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
+                {(currentUser.role === Role.LEVEL_1 || currentUser.role === Role.LEVEL_2 || currentUser.role === Role.ADMIN) && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
                   <button
-                    onClick={() => setIsPriorityModalOpen(true)}
+                    onClick={() => {
+                      console.log("[v0] Cambiar Prioridad button clicked")
+                      console.log("[v0] Current user role:", currentUser.role)
+                      console.log("[v0] Selected ticket status:", selectedTicket.status)
+                      setIsPriorityModalOpen(true)
+                    }}
                     className="px-6 py-3 text-sm font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Cambiar Prioridad
