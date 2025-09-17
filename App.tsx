@@ -1682,7 +1682,11 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
                     Tickets Resueltos - {selectedResponsibleData.name}
                   </h3>
                   <p className="text-sm text-gray-600">
-                    {selectedResponsibleData.role} • {tickets.filter(t => t && (t.status === Status.RESOLVED || t.status === Status.CLOSED) && t.assigned_to === selectedResponsibleData.id).length} tickets resueltos
+                    {selectedResponsibleData.role} • {(() => {
+                      const countEnum = tickets.filter(t => t && (t.status === Status.RESOLVED || t.status === Status.CLOSED) && t.assigned_to === selectedResponsibleData.id).length
+                      const countString = tickets.filter(t => t && (t.status === "Resuelto" || t.status === "Cerrado") && t.assigned_to === selectedResponsibleData.id).length
+                      return Math.max(countEnum, countString)
+                    })()} tickets resueltos
                   </p>
                 </div>
                 <button
@@ -1699,18 +1703,50 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
               {(() => {
                 // Obtener todos los tickets resueltos/cerrados para este responsable específico
+                console.log("[v0] Modal - All tickets:", tickets)
+                console.log("[v0] Modal - Status.RESOLVED value:", Status.RESOLVED)
+                console.log("[v0] Modal - Status.CLOSED value:", Status.CLOSED)
+                console.log("[v0] Modal - Selected responsible ID:", selectedResponsibleData.id)
+                
+                // Debuggear cada ticket individualmente
+                tickets.forEach((ticket, index) => {
+                  if (ticket) {
+                    console.log(`[v0] Modal - Ticket ${index}:`, {
+                      id: ticket.id,
+                      title: ticket.title,
+                      status: ticket.status,
+                      statusType: typeof ticket.status,
+                      assigned_to: ticket.assigned_to,
+                      assigned_toType: typeof ticket.assigned_to,
+                      isResolved: ticket.status === Status.RESOLVED,
+                      isClosed: ticket.status === Status.CLOSED,
+                      isForThisResponsible: ticket.assigned_to === selectedResponsibleData.id
+                    })
+                  }
+                })
+                
                 const responsibleTickets = tickets.filter(ticket => 
                   ticket && 
                   (ticket.status === Status.RESOLVED || ticket.status === Status.CLOSED) &&
                   ticket.assigned_to === selectedResponsibleData.id
                 )
-                console.log("[v0] Modal - All tickets:", tickets)
-                console.log("[v0] Modal - Responsible tickets found:", responsibleTickets)
-                console.log("[v0] Modal - Selected responsible ID:", selectedResponsibleData.id)
                 
-                return responsibleTickets.length > 0 ? (
+                // Filtro alternativo usando strings por si hay problema con enums
+                const responsibleTicketsAlt = tickets.filter(ticket => 
+                  ticket && 
+                  (ticket.status === "Resuelto" || ticket.status === "Cerrado") &&
+                  ticket.assigned_to === selectedResponsibleData.id
+                )
+                
+                console.log("[v0] Modal - Responsible tickets found (enum):", responsibleTickets)
+                console.log("[v0] Modal - Responsible tickets found (string):", responsibleTicketsAlt)
+                
+                // Usar el filtro que encuentre más tickets
+                const finalTickets = responsibleTicketsAlt.length > responsibleTickets.length ? responsibleTicketsAlt : responsibleTickets
+                
+                return finalTickets.length > 0 ? (
                   <div className="space-y-4">
-                    {responsibleTickets.map((ticket) => (
+                    {finalTickets.map((ticket) => (
                       <div key={ticket.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
