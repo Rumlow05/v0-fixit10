@@ -901,7 +901,7 @@ const TicketsView = ({
   const filteredTickets = isUserRole 
     ? tickets.filter((t) => t && t.requesterId === currentUser.id) // Usuarios ven TODOS sus tickets
     : currentUser.role === Role.LEVEL_1
-      ? tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED && t.assigned_to !== currentUser.id) // Nivel 1 no ve tickets asignados a él (que ha transferido)
+      ? tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED && t.transferred_by !== currentUser.id) // Nivel 1 no ve tickets que ha transferido
       : tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED) // Otros roles ven solo activos
   
   console.log("[v0] MainView - All tickets:", tickets.length)
@@ -2383,6 +2383,7 @@ const App: React.FC = () => {
       await handleUpdateTicket(selectedTicket.id, {
         assigned_to: assigneeId,
         status: Status.IN_PROGRESS,
+        transferred_by: currentUser.id, // Marcar quién transfirió el ticket
       })
       
       // Agregar comentario automático sobre la transferencia

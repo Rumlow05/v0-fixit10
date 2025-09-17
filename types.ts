@@ -39,6 +39,7 @@ export interface Ticket {
   description: string;
   requesterId: string;
   assigned_to?: string;
+  transferred_by?: string; // Usuario que transfirió el ticket
   status: Status;
   priority: Priority;
   category: string;
