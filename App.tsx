@@ -1385,7 +1385,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
 
   // Obtener estadísticas por responsable
   const getStatsByResponsible = () => {
-    const stats: { [key: string]: { name: string; count: number; role: string } } = {}
+    const stats: { [key: string]: { name: string; count: number; role: string; id: string } } = {}
     
     filteredTickets.forEach(ticket => {
       if (ticket.assigned_to) {
@@ -1393,7 +1393,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
         if (user) {
           const key = user.id
           if (!stats[key]) {
-            stats[key] = { name: user.name, count: 0, role: user.role }
+            stats[key] = { name: user.name, count: 0, role: user.role, id: user.id }
           }
           stats[key].count++
         }
@@ -1702,29 +1702,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
             
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
               {(() => {
-                // Obtener todos los tickets resueltos/cerrados para este responsable específico
-                console.log("[v0] Modal - All tickets:", tickets)
-                console.log("[v0] Modal - Status.RESOLVED value:", Status.RESOLVED)
-                console.log("[v0] Modal - Status.CLOSED value:", Status.CLOSED)
-                console.log("[v0] Modal - Selected responsible ID:", selectedResponsibleData.id)
-                
-                // Debuggear cada ticket individualmente
-                tickets.forEach((ticket, index) => {
-                  if (ticket) {
-                    console.log(`[v0] Modal - Ticket ${index}:`, {
-                      id: ticket.id,
-                      title: ticket.title,
-                      status: ticket.status,
-                      statusType: typeof ticket.status,
-                      assigned_to: ticket.assigned_to,
-                      assigned_toType: typeof ticket.assigned_to,
-                      isResolved: ticket.status === Status.RESOLVED,
-                      isClosed: ticket.status === Status.CLOSED,
-                      isForThisResponsible: ticket.assigned_to === selectedResponsibleData.id
-                    })
-                  }
-                })
-                
+                // Filtrar todos los tickets resueltos/cerrados del responsable (sin filtros de fecha)
                 const responsibleTickets = tickets.filter(ticket => 
                   ticket && 
                   (ticket.status === Status.RESOLVED || ticket.status === Status.CLOSED) &&
@@ -1737,9 +1715,6 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
                   (ticket.status === "Resuelto" || ticket.status === "Cerrado") &&
                   ticket.assigned_to === selectedResponsibleData.id
                 )
-                
-                console.log("[v0] Modal - Responsible tickets found (enum):", responsibleTickets)
-                console.log("[v0] Modal - Responsible tickets found (string):", responsibleTicketsAlt)
                 
                 // Usar el filtro que encuentre más tickets
                 const finalTickets = responsibleTicketsAlt.length > responsibleTickets.length ? responsibleTicketsAlt : responsibleTickets
