@@ -732,10 +732,18 @@ const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>()
 
   useEffect(() => {
-    if (isOpen && users?.length > 0) {
-      setSelectedUserId(users[0].id)
+    if (isOpen) {
+      // Si el ticket ya tiene un usuario asignado, mostrarlo como seleccionado
+      if (ticket?.assigned_to && users?.length > 0) {
+        console.log("[v0] AssignTicketModal - Ticket has assigned user:", ticket.assigned_to)
+        setSelectedUserId(ticket.assigned_to)
+      } else if (users?.length > 0) {
+        // Si no hay usuario asignado, seleccionar el primero disponible
+        console.log("[v0] AssignTicketModal - No assigned user, selecting first available:", users[0].id)
+        setSelectedUserId(users[0].id)
+      }
     }
-  }, [isOpen, users])
+  }, [isOpen, users, ticket])
 
   if (!isOpen) return null
 
@@ -751,6 +759,11 @@ const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
         <h3 className="text-lg font-medium leading-6 text-gray-900">Asignar Ticket</h3>
         <p className="mt-2 text-sm text-gray-600">Ticket: {ticket?.title}</p>
+        {ticket?.assigned_to && (
+          <p className="mt-1 text-sm text-blue-600">
+            Actualmente asignado a: {users?.find(u => u.id === ticket.assigned_to)?.name || "Usuario desconocido"}
+          </p>
+        )}
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label htmlFor="assignee" className="block text-sm font-medium text-gray-700">
@@ -873,7 +886,7 @@ const TicketsView = ({
   onAddCommentModalOpen,
   setAddCommentModalOpen,
 }) => {
-  const getUserName = (id: number | undefined) =>
+  const getUserName = (id: string | undefined) =>
     id ? users.find((u) => u.id === id)?.name || "Desconocido" : "Sin Asignar"
   const isUserRole = currentUser.role === Role.USER
   const canUseAI = [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role)
@@ -1031,7 +1044,7 @@ const TicketsView = ({
                   </div>
                   <div>
                     <span className="text-gray-600">Asignado a:</span>{" "}
-                    <span className="font-medium">{getUserName(selectedTicket.assigneeId)}</span>
+                    <span className="font-medium">{getUserName(selectedTicket.assigned_to)}</span>
                   </div>
                 </div>
               </div>
@@ -1109,7 +1122,7 @@ const TicketsView = ({
                   </button>
                 )}
 
-                {currentUser.role === Role.LEVEL_1 && selectedTicket.assigneeId === currentUser.id && (
+                {currentUser.role === Role.LEVEL_1 && selectedTicket.assigned_to === currentUser.id && (
                   <button
                     onClick={() => setTransferModalOpen(true)}
                     className="px-6 py-3 text-sm font-semibold text-white bg-orange-600 rounded-xl hover:bg-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -1302,8 +1315,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
     
     // Filtrar por responsable
     if (selectedResponsible !== "all") {
-      const responsibleId = parseInt(selectedResponsible)
-      resolvedTickets = resolvedTickets.filter(ticket => ticket.assigned_to === responsibleId)
+      resolvedTickets = resolvedTickets.filter(ticket => ticket.assigned_to === selectedResponsible)
     }
     
     // Filtrar por fecha
@@ -1335,7 +1347,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
       if (ticket.assigned_to) {
         const user = users.find(u => u.id === ticket.assigned_to)
         if (user) {
-          const key = user.id.toString()
+          const key = user.id
           if (!stats[key]) {
             stats[key] = { name: user.name, count: 0, role: user.role }
           }
@@ -1347,7 +1359,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
     return Object.values(stats).sort((a, b) => b.count - a.count)
   }
 
-  const getUserName = (id: number | undefined) => {
+  const getUserName = (id: string | undefined) => {
     if (!id) return "Sin Asignar"
     const user = users.find((u) => u.id === id)
     return user ? user.name : "Desconocido"
@@ -1944,7 +1956,7 @@ const App: React.FC = () => {
         priority: ticketData.priority,
         category: ticketData.category,
         assigned_to: ticketData.assigned_to,
-        created_by: currentUser.id,
+        requesterId: currentUser.id,
       })
 
       setTickets([newTicket, ...tickets])

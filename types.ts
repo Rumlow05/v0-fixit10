@@ -20,7 +20,7 @@ export enum Priority {
 }
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: Role;
@@ -34,16 +34,16 @@ export interface Comment {
 }
 
 export interface Ticket {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  requesterId: number;
-  assigneeId?: number;
+  requesterId: string;
+  assigned_to?: string;
   status: Status;
   priority: Priority;
   category: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
   comments: Comment[];
 }
 
