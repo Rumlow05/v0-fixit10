@@ -740,8 +740,8 @@ const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
       } else if (users?.length > 0) {
         // Si no hay usuario asignado, seleccionar el primero disponible
         console.log("[v0] AssignTicketModal - No assigned user, selecting first available:", users[0].id)
-        setSelectedUserId(users[0].id)
-      }
+      setSelectedUserId(users[0].id)
+    }
     }
   }, [isOpen, users, ticket])
 
@@ -994,31 +994,31 @@ const TicketsView = ({
         <div className="p-2">
           {filteredTickets.map((ticket) => 
             ticket ? (
-              <div
-                key={ticket.id}
-                onClick={() => onSelectTicket(ticket)}
-                className={`p-4 m-2 rounded-xl cursor-pointer transition-all duration-200 border ${
-                  selectedTicket?.id === ticket.id
-                    ? "bg-primary/5 border-primary shadow-lg"
-                    : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-md"
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900 text-sm leading-tight">{ticket.title}</h3>
-                  <span className="text-xs text-gray-500">#{ticket.id}</span>
-                </div>
-                <div className="flex gap-2 mb-2">
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded-lg border ${getPriorityColor(ticket.priority)}`}
-                  >
-                    {ticket.priority}
-                  </span>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-lg border ${getStatusColor(ticket.status)}`}>
-                    {ticket.status}
-                  </span>
-                </div>
-                {!isUserRole && <p className="text-xs text-gray-500">Solicitante: {getUserName(ticket.requesterId)}</p>}
+            <div
+              key={ticket.id}
+              onClick={() => onSelectTicket(ticket)}
+              className={`p-4 m-2 rounded-xl cursor-pointer transition-all duration-200 border ${
+                selectedTicket?.id === ticket.id
+                  ? "bg-primary/5 border-primary shadow-lg"
+                  : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-md"
+              }`}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-semibold text-gray-900 text-sm leading-tight">{ticket.title}</h3>
+                <span className="text-xs text-gray-500">#{ticket.id}</span>
               </div>
+              <div className="flex gap-2 mb-2">
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${getPriorityColor(ticket.priority)}`}
+                >
+                  {ticket.priority}
+                </span>
+                <span className={`px-2 py-1 text-xs font-medium rounded-lg border ${getStatusColor(ticket.status)}`}>
+                  {ticket.status}
+                </span>
+              </div>
+              {!isUserRole && <p className="text-xs text-gray-500">Solicitante: {getUserName(ticket.requesterId)}</p>}
+            </div>
             ) : null
           )}
         </div>
@@ -1445,7 +1445,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
   const totalResolved = filteredTickets.length
 
   return (
-    <div className="p-6">
+    <div className="p-6 h-full overflow-y-auto">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Tickets Resueltos</h2>
         <p className="text-gray-600">Visualiza y analiza los tickets resueltos por responsable y período</p>
@@ -1810,8 +1810,8 @@ const App: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
-      const savedUser = localStorage.getItem("fixit_currentUser")
-      return savedUser ? JSON.parse(savedUser) : null
+    const savedUser = localStorage.getItem("fixit_currentUser")
+    return savedUser ? JSON.parse(savedUser) : null
     }
     return null
   })
@@ -1898,10 +1898,10 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      if (currentUser) {
-        localStorage.setItem("fixit_currentUser", JSON.stringify(currentUser))
-      } else {
-        localStorage.removeItem("fixit_currentUser")
+    if (currentUser) {
+      localStorage.setItem("fixit_currentUser", JSON.stringify(currentUser))
+    } else {
+      localStorage.removeItem("fixit_currentUser")
       }
     }
   }, [currentUser])
@@ -2396,7 +2396,6 @@ const App: React.FC = () => {
 
       {!showDatabaseSetup && (
         <div className="h-screen bg-gray-50 flex overflow-hidden">
-          <div className="flex-1 overflow-y-auto">
           <Sidebar
             currentUser={currentUser}
             currentView={currentView}
@@ -2473,7 +2472,6 @@ const App: React.FC = () => {
             onAddComment={handleAddComment}
             currentUser={currentUser}
           />
-          </div>
         </div>
       )}
     </>
