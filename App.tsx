@@ -1708,6 +1708,7 @@ const App: React.FC = () => {
         console.log("[v0] Starting to load tickets...")
         const fetchedTickets = await ticketServiceClient.getAllTickets()
         console.log("[v0] Tickets loaded successfully:", fetchedTickets.length, "tickets")
+        console.log("[v0] All loaded tickets:", fetchedTickets)
         setTickets(fetchedTickets)
       } catch (error) {
         console.error("[v0] Error loading tickets:", error)
