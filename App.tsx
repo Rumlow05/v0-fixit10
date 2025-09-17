@@ -1311,7 +1311,26 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
 
   // Filtrar tickets resueltos
   useEffect(() => {
-    let resolvedTickets = tickets.filter(ticket => ticket && ticket.status === Status.RESOLVED)
+    console.log("[v0] ResolvedTicketsView - All tickets:", tickets)
+    console.log("[v0] ResolvedTicketsView - Status.RESOLVED value:", Status.RESOLVED)
+    console.log("[v0] ResolvedTicketsView - Status enum values:", {
+      OPEN: Status.OPEN,
+      IN_PROGRESS: Status.IN_PROGRESS,
+      RESOLVED: Status.RESOLVED,
+      CLOSED: Status.CLOSED
+    })
+    
+    let resolvedTickets = tickets.filter(ticket => {
+      console.log("[v0] ResolvedTicketsView - Checking ticket:", {
+        id: ticket?.id,
+        title: ticket?.title,
+        status: ticket?.status,
+        statusType: typeof ticket?.status,
+        matches: ticket?.status === Status.RESOLVED
+      })
+      return ticket && ticket.status === Status.RESOLVED
+    })
+    console.log("[v0] ResolvedTicketsView - Resolved tickets found:", resolvedTickets.length, resolvedTickets)
     
     // Filtrar por responsable
     if (selectedResponsible !== "all") {
@@ -1983,6 +2002,7 @@ const App: React.FC = () => {
       console.log("[v0] handleUpdateTicket - Updating ticket:", ticketId, "with updates:", updates)
       const updatedTicket = await ticketServiceClient.updateTicket(ticketId, updates)
       console.log("[v0] handleUpdateTicket - Updated ticket received:", updatedTicket)
+      console.log("[v0] handleUpdateTicket - Updated ticket status:", updatedTicket?.status, "type:", typeof updatedTicket?.status)
       
       const newTickets = tickets.map((t) => (t && t.id === ticketId ? updatedTicket : t)).filter(t => t)
       console.log("[v0] handleUpdateTicket - New tickets array:", newTickets)
@@ -2049,7 +2069,10 @@ const App: React.FC = () => {
 
   const handleResolveTicket = async (ticketId: string, status: Status = Status.RESOLVED) => {
     try {
+      console.log("[v0] handleResolveTicket - Resolving ticket:", ticketId, "with status:", status)
+      console.log("[v0] handleResolveTicket - Status.RESOLVED value:", Status.RESOLVED)
       await handleUpdateTicket(ticketId, { status })
+      console.log("[v0] handleResolveTicket - Ticket resolved successfully")
 
       // Send notification email
       const ticket = tickets.find((t) => t && t.id === ticketId)
