@@ -1311,13 +1311,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
 
   // Filtrar tickets resueltos
   useEffect(() => {
-    console.log("[v0] ResolvedTicketsView - All tickets:", tickets)
-    console.log("[v0] ResolvedTicketsView - Status.RESOLVED value:", Status.RESOLVED)
-    let resolvedTickets = tickets.filter(ticket => {
-      console.log("[v0] ResolvedTicketsView - Checking ticket:", ticket?.id, "status:", ticket?.status, "matches:", ticket?.status === Status.RESOLVED)
-      return ticket && ticket.status === Status.RESOLVED
-    })
-    console.log("[v0] ResolvedTicketsView - Resolved tickets found:", resolvedTickets.length)
+    let resolvedTickets = tickets.filter(ticket => ticket && ticket.status === Status.RESOLVED)
     
     // Filtrar por responsable
     if (selectedResponsible !== "all") {
@@ -2055,9 +2049,7 @@ const App: React.FC = () => {
 
   const handleResolveTicket = async (ticketId: string, status: Status = Status.RESOLVED) => {
     try {
-      console.log("[v0] handleResolveTicket - Resolving ticket:", ticketId, "with status:", status)
       await handleUpdateTicket(ticketId, { status })
-      console.log("[v0] handleResolveTicket - Ticket resolved successfully")
 
       // Send notification email
       const ticket = tickets.find((t) => t && t.id === ticketId)

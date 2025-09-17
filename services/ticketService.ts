@@ -1,44 +1,24 @@
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createBrowserClient } from "@/lib/supabase/client"
+import { Ticket, Priority, Status } from "@/types"
 
-export interface Ticket {
-  id: string
-  title: string
-  description: string
-  priority: "baja" | "media" | "alta" | "critica"
-  status: "abierto" | "en_progreso" | "resuelto" | "cerrado"
-  category: string
-  assigned_to?: string
-  created_by: string
-  created_at: string
-  updated_at: string
-  resolved_at?: string
-  resolution_notes?: string
-  // Joined data
-  assigned_user?: {
-    name: string
-    email: string
-  }
-  creator?: {
-    name: string
-    email: string
-  }
-}
+// Re-export types from types.ts
+export { Ticket, Priority, Status }
 
 export interface CreateTicketData {
   title: string
   description: string
-  priority: "baja" | "media" | "alta" | "critica"
+  priority: Priority
   category: string
   assigned_to?: string
-  created_by: string
+  requesterId: string
 }
 
 export interface UpdateTicketData {
   title?: string
   description?: string
-  priority?: "baja" | "media" | "alta" | "critica"
-  status?: "abierto" | "en_progreso" | "resuelto" | "cerrado"
+  priority?: Priority
+  status?: Status
   category?: string
   assigned_to?: string
   resolution_notes?: string

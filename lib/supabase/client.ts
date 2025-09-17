@@ -87,12 +87,13 @@ const getMockTickets = (): any[] => {
       id: "ticket-1",
       title: "Problema con el sistema",
       description: "El sistema no responde correctamente",
-      status: "open",
-      priority: "high",
-      user_id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30",
+      status: "Abierto",
+      priority: "Alta",
+      requesterId: "2af4b6bf-01fe-4b9f-9611-35178dc75c30",
       assigned_to: null,
       created_at: "2025-09-16T03:05:58.368131+00:00",
       updated_at: "2025-09-16T03:05:58.368131+00:00",
+      comments: [],
     },
   ]
   
@@ -115,12 +116,13 @@ const mockTickets = [
     id: "ticket-1",
     title: "Problema con el sistema",
     description: "El sistema no responde correctamente",
-    status: "open",
-    priority: "high",
-    user_id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30",
+    status: "Abierto",
+    priority: "Alta",
+    requesterId: "2af4b6bf-01fe-4b9f-9611-35178dc75c30",
     assigned_to: null,
     created_at: "2025-09-16T03:05:58.368131+00:00",
     updated_at: "2025-09-16T03:05:58.368131+00:00",
+    comments: [],
   },
 ]
 
