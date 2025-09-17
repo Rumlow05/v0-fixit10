@@ -39,6 +39,7 @@
     "@radix-ui/react-toggle": "latest",
     "@radix-ui/react-toggle-group": "latest",
     "@radix-ui/react-tooltip": "latest",
+    "@types/qrcode": "^1.5.5",
     "@vercel/analytics": "latest",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
@@ -56,6 +57,7 @@
     "next-themes": "latest",
     "nodemailer": "latest",
     "path": "latest",
+    "qrcode": "^1.5.4",
     "react": "^18",
     "react-day-picker": "latest",
     "react-dom": "^18",
@@ -73,6 +75,7 @@
     "tsx": "latest",
     "vaul": "latest",
     "vite": "latest",
+    "whatsapp-web.js": "^1.34.1",
     "yaml": "latest",
     "zod": "3.25.67"
   },

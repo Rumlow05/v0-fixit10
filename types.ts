@@ -23,6 +23,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string; // Número de teléfono para WhatsApp
   role: Role;
 }
 

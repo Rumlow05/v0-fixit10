@@ -7,6 +7,38 @@ interface EmailOptions {
   text?: string
 }
 
+// Función para enviar notificación por WhatsApp
+const sendWhatsAppNotification = async (phoneNumber: string, ticketData: any, type: string) => {
+  try {
+    const response = await fetch('/api/whatsapp/send-notification', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phoneNumber,
+        ticketData: {
+          ticketId: ticketData.ticketId,
+          title: ticketData.title,
+          status: ticketData.status,
+          priority: ticketData.priority,
+          message: ticketData.resolutionMessage || ticketData.deleteMessage,
+          type: type
+        }
+      })
+    });
+
+    const result = await response.json();
+    if (result.status === 'success') {
+      console.log('[EmailService] Notificación WhatsApp enviada exitosamente');
+    } else {
+      console.error('[EmailService] Error enviando WhatsApp:', result.message);
+    }
+  } catch (error) {
+    console.error('[EmailService] Error enviando notificación WhatsApp:', error);
+  }
+}
+
 interface TicketNotificationData {
   ticketId: string
   title: string
@@ -20,6 +52,7 @@ interface TicketNotificationData {
   wasResolved?: boolean
   deleteMessage?: string
   deletedBy?: string
+  phoneNumber?: string // Número de teléfono para WhatsApp
 }
 
 class EmailService {
@@ -120,12 +153,19 @@ class EmailService {
       </html>
     `
 
-    return this.sendEmail({
+    const emailResult = await this.sendEmail({
       to: recipientEmail,
       subject: `[FixIT] Nuevo Ticket: ${data.title}`,
       html,
       text: `Nuevo ticket creado: ${data.title}\nID: ${data.ticketId}\nPrioridad: ${data.priority}\nDescripción: ${data.description}`,
     })
+
+    // Enviar notificación por WhatsApp si hay número de teléfono
+    if (data.phoneNumber) {
+      await sendWhatsAppNotification(data.phoneNumber, data, 'created')
+    }
+
+    return emailResult
   }
 
   async sendTicketUpdatedNotification(
@@ -197,12 +237,25 @@ class EmailService {
       </html>
     `
 
-    return this.sendEmail({
+    const emailResult = await this.sendEmail({
       to: recipientEmail,
       subject: `[FixIT] Actualización de Ticket: ${data.title}`,
       html,
       text: `Ticket actualizado: ${data.title}\nID: ${data.ticketId}\nTipo: ${updateType}\nEstado: ${data.status}`,
     })
+
+    // Enviar notificación por WhatsApp si hay número de teléfono
+    if (data.phoneNumber) {
+      let whatsappType = 'updated'
+      if (data.resolutionMessage) {
+        whatsappType = 'resolved'
+      } else if (data.deleteMessage) {
+        whatsappType = 'deleted'
+      }
+      await sendWhatsAppNotification(data.phoneNumber, data, whatsappType)
+    }
+
+    return emailResult
   }
 
   async sendWelcomeEmail(userEmail: string, userName: string): Promise<boolean> {
