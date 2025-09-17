@@ -1969,14 +1969,17 @@ const App: React.FC = () => {
     if (!currentUser) return
 
     try {
-      const newTicket = await ticketServiceClient.createTicket({
+      const ticketToCreate = {
         title: ticketData.title,
         description: ticketData.description,
         priority: ticketData.priority,
         category: ticketData.category,
         assigned_to: ticketData.assigned_to,
         requesterId: currentUser.id,
-      })
+      }
+      console.log("[v0] handleCreateTicket - Creating ticket with data:", ticketToCreate)
+      const newTicket = await ticketServiceClient.createTicket(ticketToCreate)
+      console.log("[v0] handleCreateTicket - Created ticket:", newTicket)
 
       setTickets([newTicket, ...tickets])
       closeCreateTicketModal() // Use the proper function name

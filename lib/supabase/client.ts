@@ -164,8 +164,18 @@ export function createClient(): MockSupabaseClient {
             }
             if (table === "tickets") {
               const tickets = getMockTickets()
-              tickets.push(newItem)
+              // Asignar valores por defecto si no se proporcionan
+              const ticketWithDefaults = {
+                ...newItem,
+                status: newItem.status || "Abierto",
+                priority: newItem.priority || "Media",
+                created_at: newItem.created_at || new Date().toISOString(),
+                updated_at: newItem.updated_at || new Date().toISOString(),
+                comments: newItem.comments || [],
+              }
+              tickets.push(ticketWithDefaults)
               saveMockTickets(tickets)
+              return { data: ticketWithDefaults, error: null }
             }
             return { data: newItem, error: null }
           },
