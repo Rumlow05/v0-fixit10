@@ -43,7 +43,7 @@ const getMockUsers = (): any[] => {
   const defaultUsers = [
     {
       id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30",
-      email: "admin@fixit.com",
+      email: "tech@emprendetucarrera.com.co",
       name: "Administrador",
       phone: "+573001234567",
       role: "admin",
