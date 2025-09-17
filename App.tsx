@@ -2396,6 +2396,7 @@ const App: React.FC = () => {
 
       {!showDatabaseSetup && (
         <div className="h-screen bg-gray-50 flex overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
           <Sidebar
             currentUser={currentUser}
             currentView={currentView}
@@ -2472,6 +2473,7 @@ const App: React.FC = () => {
             onAddComment={handleAddComment}
             currentUser={currentUser}
           />
+          </div>
         </div>
       )}
     </>
