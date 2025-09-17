@@ -1164,7 +1164,7 @@ const TicketsView = ({
                   </button>
                 )}
 
-                {currentUser.role === Role.LEVEL_1 && selectedTicket.assigned_to === currentUser.id && (
+                {currentUser.role === Role.LEVEL_1 && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
                   <button
                     onClick={() => setTransferModalOpen(true)}
                     className="px-6 py-3 text-sm font-semibold text-white bg-orange-600 rounded-xl hover:bg-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
