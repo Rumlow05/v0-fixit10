@@ -900,7 +900,9 @@ const TicketsView = ({
   // Filtrar tickets: usuarios ven todos sus tickets, otros roles ven solo activos
   const filteredTickets = isUserRole 
     ? tickets.filter((t) => t && t.requesterId === currentUser.id) // Usuarios ven TODOS sus tickets
-    : tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED) // Otros roles ven solo activos
+    : currentUser.role === Role.LEVEL_1
+      ? tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED && t.assigned_to !== currentUser.id) // Nivel 1 no ve tickets asignados a él (que ha transferido)
+      : tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED) // Otros roles ven solo activos
   
   console.log("[v0] MainView - All tickets:", tickets.length)
   console.log("[v0] MainView - Filtered tickets (active only):", filteredTickets.length)
@@ -2382,10 +2384,18 @@ const App: React.FC = () => {
         assigned_to: assigneeId,
         status: Status.IN_PROGRESS,
       })
+      
+      // Agregar comentario automático sobre la transferencia
+      const assignee = users.find((u) => u.id === assigneeId)
+      if (assignee) {
+        await handleAddComment(
+          `Ticket transferido a Nivel 2 - Asignado a: ${assignee.name} (${assignee.role})`
+        )
+      }
+      
       closeTransferModal()
 
       // Send notification email
-      const assignee = users.find((u) => u.id === assigneeId)
       if (assignee) {
         await sendEmailNotification(
           "ticket-updated",
