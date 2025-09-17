@@ -1000,6 +1000,84 @@ const ResolutionModal = ({
   )
 }
 
+const DeleteTicketModal = ({
+  isOpen,
+  onClose,
+  onDelete,
+  ticketTitle,
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onDelete: (deleteMessage: string) => void;
+  ticketTitle: string;
+}) => {
+  const [deleteMessage, setDeleteMessage] = useState("")
+
+  useEffect(() => {
+    if (isOpen) {
+      setDeleteMessage("")
+    }
+  }, [isOpen])
+
+  if (!isOpen) return null
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (deleteMessage.trim()) {
+      onDelete(deleteMessage.trim())
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+        <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+          🗑️ Eliminar Ticket: {ticketTitle}
+        </h3>
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800 text-sm">
+            <strong>⚠️ Advertencia:</strong> Esta acción eliminará permanentemente el ticket. 
+            El usuario solicitante será notificado del motivo de la eliminación.
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="delete-message" className="block text-sm font-medium text-gray-700 mb-2">
+              Motivo de la eliminación (obligatorio):
+            </label>
+            <textarea
+              id="delete-message"
+              value={deleteMessage}
+              onChange={(e) => setDeleteMessage(e.target.value)}
+              placeholder="Ejemplo: El ticket fue eliminado porque la solicitud no cumple con las políticas de soporte técnico. El problema reportado no está relacionado con el área de TI."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              rows={4}
+              required
+            />
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={!deleteMessage.trim()}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              Eliminar Ticket
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 const AddCommentModal = ({ isOpen, onClose, onAddComment, currentUser }) => {
   const [comment, setComment] = useState("")
 
@@ -1083,6 +1161,7 @@ const TicketsView = ({
   onAddCommentModalOpen,
   setAddCommentModalOpen,
   setResolutionModalOpen,
+  setDeleteModalOpen,
 }) => {
   const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(false)
   
@@ -1384,6 +1463,15 @@ const TicketsView = ({
                     className="px-6 py-3 text-sm font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Cambiar Prioridad
+                  </button>
+                )}
+
+                {currentUser.role === Role.ADMIN && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
+                  <button
+                    onClick={() => setDeleteModalOpen(true)}
+                    className="px-6 py-3 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Eliminar Ticket
                   </button>
                 )}
 
@@ -2136,6 +2224,7 @@ const App: React.FC = () => {
   const [isAddCommentModalOpen, setAddCommentModalOpen] = useState(false)
   const [isPriorityModalOpen, setIsPriorityModalOpen] = useState(false)
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
   // --- Effects for Data Persistence ---
   useEffect(() => {
@@ -2301,6 +2390,14 @@ const App: React.FC = () => {
 
   const closeResolutionModal = () => {
     setIsResolutionModalOpen(false)
+  }
+
+  const openDeleteModal = () => {
+    setIsDeleteModalOpen(true)
+  }
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false)
   }
 
   const handleSelectTicket = async (ticket: Ticket) => {
@@ -2733,6 +2830,50 @@ const App: React.FC = () => {
     }
   }
 
+  const handleDeleteWithMessage = async (deleteMessage: string) => {
+    if (!selectedTicket) return
+
+    try {
+      // Crear mensaje de eliminación
+      const deleteComment = `**🗑️ TICKET ELIMINADO**\n\n**Motivo de eliminación:**\n${deleteMessage}\n\n**Eliminado por:** ${currentUser?.name} (${currentUser?.role})`
+      
+      // Agregar comentario con el mensaje de eliminación antes de eliminar
+      await handleAddComment(deleteComment)
+      
+      // Send notification email al solicitante antes de eliminar
+      const requester = users.find((u) => u.id === selectedTicket.requesterId)
+      if (requester) {
+        await sendEmailNotification(
+          "ticket-updated",
+          {
+            ticketId: selectedTicket.id.toString(),
+            title: selectedTicket.title,
+            description: selectedTicket.description,
+            priority: selectedTicket.priority,
+            status: "Eliminado",
+            assignedTo: users.find(u => u.id === selectedTicket.assigned_to)?.name || "Sin Asignar",
+            createdBy: users.find(u => u.id === selectedTicket.requesterId)?.name || "Desconocido",
+            createdAt: selectedTicket.created_at,
+            deleteMessage: deleteMessage,
+            deletedBy: currentUser?.name || "Administrador",
+          },
+          requester.email,
+          "Ticket eliminado"
+        )
+      }
+
+      // Eliminar el ticket
+      await handleDeleteTicket(selectedTicket.id)
+      
+      setIsDeleteModalOpen(false)
+      setSelectedTicket(null) // Limpiar la selección
+      
+    } catch (error) {
+      console.error("[v0] Error deleting ticket with message:", error)
+      alert("Error al eliminar el ticket. Por favor intenta de nuevo.")
+    }
+  }
+
   if (isLoadingUsers || isLoadingTickets) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -2830,6 +2971,7 @@ const App: React.FC = () => {
               setAddCommentModalOpen={setAddCommentModalOpen}
               setPriorityModalOpen={setIsPriorityModalOpen}
               setResolutionModalOpen={setIsResolutionModalOpen}
+              setDeleteModalOpen={setIsDeleteModalOpen}
             />
           ) : currentView === "resolved" ? (
             <ResolvedTicketsView
@@ -2886,6 +3028,12 @@ const App: React.FC = () => {
             isOpen={isResolutionModalOpen}
             onClose={closeResolutionModal}
             onResolve={handleResolveWithMessage}
+            ticketTitle={selectedTicket?.title || ""}
+          />
+          <DeleteTicketModal
+            isOpen={isDeleteModalOpen}
+            onClose={closeDeleteModal}
+            onDelete={handleDeleteWithMessage}
             ticketTitle={selectedTicket?.title || ""}
           />
         </div>

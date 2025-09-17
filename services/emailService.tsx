@@ -18,6 +18,8 @@ interface TicketNotificationData {
   createdAt: string
   resolutionMessage?: string
   wasResolved?: boolean
+  deleteMessage?: string
+  deletedBy?: string
 }
 
 class EmailService {
@@ -173,6 +175,14 @@ class EmailService {
                     <p><strong>${data.wasResolved ? '✅ Problema Resuelto' : '❌ Problema No Resuelto'}</strong></p>
                     <p><strong>Mensaje de resolución:</strong></p>
                     <p style="margin-top: 5px; font-style: italic;">${data.resolutionMessage}</p>
+                  </div>
+                ` : ""}
+                ${data.deleteMessage ? `
+                  <div style="margin-top: 15px; padding: 10px; background-color: #fef2f2; border-radius: 6px; border-left: 4px solid #ef4444;">
+                    <p><strong>🗑️ Ticket Eliminado</strong></p>
+                    <p><strong>Eliminado por:</strong> ${data.deletedBy || 'Administrador'}</p>
+                    <p><strong>Motivo de eliminación:</strong></p>
+                    <p style="margin-top: 5px; font-style: italic;">${data.deleteMessage}</p>
                   </div>
                 ` : ""}
               </div>
