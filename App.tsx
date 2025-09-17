@@ -975,6 +975,7 @@ const TicketsView = ({
   setCreateTicketModalOpen,
   onAssignTicketModalOpen,
   setAssignTicketModalOpen,
+  setPriorityModalOpen,
   onAddCommentModalOpen,
   setAddCommentModalOpen,
 }) => {
@@ -1273,7 +1274,7 @@ const TicketsView = ({
                       console.log("[v0] Cambiar Prioridad button clicked")
                       console.log("[v0] Current user role:", currentUser.role)
                       console.log("[v0] Selected ticket status:", selectedTicket.status)
-                      setIsPriorityModalOpen(true)
+                      setPriorityModalOpen(true)
                     }}
                     className="px-6 py-3 text-sm font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
@@ -2670,6 +2671,7 @@ const App: React.FC = () => {
               setAssignTicketModalOpen={setAssignTicketModalOpen}
               onAddCommentModalOpen={openAddCommentModal}
               setAddCommentModalOpen={setAddCommentModalOpen}
+              setPriorityModalOpen={setIsPriorityModalOpen}
             />
           ) : currentView === "resolved" ? (
             <ResolvedTicketsView
