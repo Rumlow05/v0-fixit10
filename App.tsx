@@ -913,7 +913,6 @@ const TicketsView = ({
     open: filteredTickets.filter((t) => t && t.status === Status.OPEN).length,
     inProgress: filteredTickets.filter((t) => t && t.status === Status.IN_PROGRESS).length,
     high: filteredTickets.filter((t) => t && (t.priority === Priority.HIGH || t.priority === Priority.CRITICAL)).length,
-    resolved: tickets.filter((t) => t && (t.status === Status.RESOLVED || t.status === Status.CLOSED)).length,
   }
 
   const getPriorityColor = (priority: Priority) => {
@@ -979,15 +978,6 @@ const TicketsView = ({
             <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl border border-red-200">
               <div className="text-2xl font-bold text-red-900">{stats.high}</div>
               <div className="text-sm text-red-700 font-medium">Alta Prioridad</div>
-            </div>
-            <div 
-              className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
-              onClick={() => setCurrentView("resolved")}
-              title="Ver tickets resueltos"
-            >
-              <div className="text-2xl font-bold text-green-900">{stats.resolved}</div>
-              <div className="text-sm text-green-700 font-medium">Tickets Resueltos</div>
-              <div className="text-xs text-green-600 mt-1">Click para ver</div>
             </div>
           </div>
         </div>
