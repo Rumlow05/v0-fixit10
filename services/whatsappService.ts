@@ -1,17 +1,39 @@
-import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
-import * as qrcode from 'qrcode';
+// Importaciones condicionales para compatibilidad con Vercel
+let Client: any = null;
+let LocalAuth: any = null;
+let qrcode: any = null;
+
+// Solo importar en entorno de desarrollo o cuando sea posible
+if (typeof window === 'undefined' && process.env.NODE_ENV !== 'production') {
+  try {
+    const whatsappWeb = require('whatsapp-web.js');
+    Client = whatsappWeb.Client;
+    LocalAuth = whatsappWeb.LocalAuth;
+    qrcode = require('qrcode');
+  } catch (error) {
+    console.log('[WhatsApp] Librerías no disponibles en este entorno');
+  }
+}
 
 class WhatsAppService {
-  private client: Client | null = null;
+  private client: any = null;
   private isConnected = false;
   private qrCode: string | null = null;
   private connectionPromise: Promise<void> | null = null;
+  private isAvailable = false;
 
   constructor() {
-    this.initializeClient();
+    this.isAvailable = !!(Client && LocalAuth && qrcode);
+    if (this.isAvailable) {
+      this.initializeClient();
+    } else {
+      console.log('[WhatsApp] Servicio no disponible en este entorno');
+    }
   }
 
   private initializeClient() {
+    if (!this.isAvailable) return;
+    
     try {
       this.client = new Client({
         authStrategy: new LocalAuth({
@@ -26,6 +48,7 @@ class WhatsAppService {
       this.setupEventListeners();
     } catch (error) {
       console.error('[WhatsApp] Error inicializando cliente:', error);
+      this.isAvailable = false;
     }
   }
 
@@ -64,6 +87,10 @@ class WhatsAppService {
   }
 
   async connect(): Promise<void> {
+    if (!this.isAvailable) {
+      throw new Error('WhatsApp no está disponible en este entorno');
+    }
+
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
@@ -99,10 +126,19 @@ class WhatsAppService {
   }
 
   isWhatsAppConnected(): boolean {
-    return this.isConnected;
+    return this.isAvailable && this.isConnected;
+  }
+
+  isServiceAvailable(): boolean {
+    return this.isAvailable;
   }
 
   async sendMessage(phoneNumber: string, message: string): Promise<boolean> {
+    if (!this.isAvailable) {
+      console.log('[WhatsApp] Servicio no disponible en este entorno');
+      return false;
+    }
+
     if (!this.client || !this.isConnected) {
       console.error('[WhatsApp] Cliente no conectado');
       return false;

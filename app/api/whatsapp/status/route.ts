@@ -3,15 +3,17 @@ import { whatsappService } from '@/services/whatsappService';
 
 export async function GET() {
   try {
+    const isAvailable = whatsappService.isServiceAvailable();
     const isConnected = whatsappService.isWhatsAppConnected();
     const qrCode = whatsappService.getQRCode();
     
     return NextResponse.json({ 
       status: 'success',
       data: {
+        isAvailable,
         isConnected,
         qrCode: qrCode,
-        needsQR: !isConnected && !qrCode
+        needsQR: isAvailable && !isConnected && !qrCode
       }
     });
   } catch (error) {

@@ -3,12 +3,22 @@ import { whatsappService } from '@/services/whatsappService';
 
 export async function GET() {
   try {
+    // Verificar si el servicio está disponible
+    if (!whatsappService.isServiceAvailable()) {
+      return NextResponse.json({ 
+        status: 'unavailable',
+        message: 'WhatsApp no está disponible en este entorno. Solo funciona en desarrollo local.',
+        isAvailable: false
+      });
+    }
+
     const isConnected = whatsappService.isWhatsAppConnected();
     
     if (isConnected) {
       return NextResponse.json({ 
         status: 'connected',
-        message: 'WhatsApp ya está conectado'
+        message: 'WhatsApp ya está conectado',
+        isAvailable: true
       });
     }
 
@@ -18,7 +28,8 @@ export async function GET() {
       return NextResponse.json({ 
         status: 'qr_ready',
         qrCode: qrCode,
-        message: 'QR Code generado. Escanea con WhatsApp para conectar.'
+        message: 'QR Code generado. Escanea con WhatsApp para conectar.',
+        isAvailable: true
       });
     }
 
@@ -27,13 +38,15 @@ export async function GET() {
       await whatsappService.connect();
       return NextResponse.json({ 
         status: 'connecting',
-        message: 'Conectando a WhatsApp...'
+        message: 'Conectando a WhatsApp...',
+        isAvailable: true
       });
     } catch (error) {
       return NextResponse.json({ 
         status: 'error',
         message: 'Error al conectar con WhatsApp',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        isAvailable: true
       }, { status: 500 });
     }
   } catch (error) {
@@ -41,7 +54,8 @@ export async function GET() {
     return NextResponse.json({ 
       status: 'error',
       message: 'Error interno del servidor',
-      error: error instanceof Error ? error.message : 'Error desconocido'
+      error: error instanceof Error ? error.message : 'Error desconocido',
+      isAvailable: false
     }, { status: 500 });
   }
 }

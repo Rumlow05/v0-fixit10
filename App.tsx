@@ -1102,7 +1102,7 @@ const WhatsAppAdminPanel = ({
   isOpen: boolean;
   onClose: () => void;
   qrCode: string | null;
-  status: {isConnected: boolean, needsQR: boolean};
+  status: {isConnected: boolean, needsQR: boolean, isAvailable?: boolean};
   onConnect: () => void;
   onDisconnect: () => void;
 }) => {
@@ -1124,21 +1124,36 @@ const WhatsAppAdminPanel = ({
         </div>
 
         <div className="space-y-4">
-          {/* Estado de conexión */}
-          <div className="p-4 rounded-lg border">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className={`w-3 h-3 rounded-full ${status.isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="font-medium">
-                {status.isConnected ? 'Conectado' : 'Desconectado'}
-              </span>
+          {/* Estado de disponibilidad */}
+          {status.isAvailable === false && (
+            <div className="p-4 rounded-lg border border-yellow-200 bg-yellow-50">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <span className="font-medium text-yellow-800">No Disponible</span>
+              </div>
+              <p className="text-sm text-yellow-700">
+                WhatsApp solo está disponible en desarrollo local. En producción, las notificaciones se envían únicamente por email.
+              </p>
             </div>
-            <p className="text-sm text-gray-600">
-              {status.isConnected 
-                ? 'WhatsApp está conectado y listo para enviar notificaciones'
-                : 'WhatsApp no está conectado. Conecta para enviar notificaciones'
-              }
-            </p>
-          </div>
+          )}
+
+          {/* Estado de conexión */}
+          {status.isAvailable !== false && (
+            <div className="p-4 rounded-lg border">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className={`w-3 h-3 rounded-full ${status.isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="font-medium">
+                  {status.isConnected ? 'Conectado' : 'Desconectado'}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600">
+                {status.isConnected 
+                  ? 'WhatsApp está conectado y listo para enviar notificaciones'
+                  : 'WhatsApp no está conectado. Conecta para enviar notificaciones'
+                }
+              </p>
+            </div>
+          )}
 
           {/* QR Code */}
           {qrCode && !status.isConnected && (
@@ -2537,12 +2552,19 @@ const App: React.FC = () => {
       if (result.status === 'success') {
         setWhatsappStatus({
           isConnected: result.data.isConnected,
-          needsQR: result.data.needsQR
+          needsQR: result.data.needsQR,
+          isAvailable: result.data.isAvailable
         })
         setWhatsappQR(result.data.qrCode)
       }
     } catch (error) {
       console.error('[WhatsApp] Error checking status:', error)
+      // En caso de error, asumir que no está disponible
+      setWhatsappStatus({
+        isConnected: false,
+        needsQR: false,
+        isAvailable: false
+      })
     }
   }
 
