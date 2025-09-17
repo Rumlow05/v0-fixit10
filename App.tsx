@@ -886,6 +886,8 @@ const TicketsView = ({
   onAddCommentModalOpen,
   setAddCommentModalOpen,
 }) => {
+  const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(false)
+  
   const getUserName = (id: string | undefined) =>
     id ? users.find((u) => u.id === id)?.name || "Desconocido" : "Sin Asignar"
   const isUserRole = currentUser.role === Role.USER
@@ -946,20 +948,34 @@ const TicketsView = ({
   }
 
   return (
-    <div className={`flex-1 grid ${isUserRole ? "grid-cols-7" : "grid-cols-10"} h-full overflow-hidden bg-gray-50`}>
+    <div className={`flex-1 grid ${isUserRole ? "grid-cols-7" : (isAIAssistantVisible ? "grid-cols-10" : "grid-cols-7")} h-full overflow-hidden bg-gray-50`}>
       {/* Ticket List */}
       <div className="col-span-3 bg-white border-r border-gray-200 overflow-y-auto">
         <div className="p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-gray-900">{isUserRole ? "Mis Tickets" : "Todos los Tickets"}</h2>
-            {canCreate && (
-              <button
-                onClick={() => setCreateTicketModalOpen(true)}
-                className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                + Nuevo
-              </button>
-            )}
+            <div className="flex gap-3">
+              {canUseAI && (
+                <button
+                  onClick={() => setIsAIAssistantVisible(!isAIAssistantVisible)}
+                  className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${
+                    isAIAssistantVisible 
+                      ? "text-white bg-purple-600 hover:bg-purple-700" 
+                      : "text-purple-600 bg-purple-100 hover:bg-purple-200"
+                  }`}
+                >
+                  {isAIAssistantVisible ? "Ocultar IA" : "Mostrar IA"}
+                </button>
+              )}
+              {canCreate && (
+                <button
+                  onClick={() => setCreateTicketModalOpen(true)}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  + Nuevo
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -1185,7 +1201,7 @@ const TicketsView = ({
       </div>
 
       {/* AI Panel */}
-      {canUseAI && (
+      {canUseAI && isAIAssistantVisible && (
         <div className="col-span-3 bg-gradient-to-br from-gray-50 to-gray-100 border-l border-gray-200 overflow-y-auto">
           <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
