@@ -1429,6 +1429,9 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
   }
 
   const handleResponsibleClick = (responsible: {name: string, id: string, role: string}) => {
+    console.log("[v0] handleResponsibleClick - Responsible clicked:", responsible)
+    console.log("[v0] handleResponsibleClick - All filtered tickets:", filteredTickets)
+    console.log("[v0] handleResponsibleClick - Tickets for this responsible:", filteredTickets.filter(t => t.assigned_to === responsible.id))
     setSelectedResponsibleData(responsible)
     setIsResponsibleModalOpen(true)
   }
@@ -1679,7 +1682,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
                     Tickets Resueltos - {selectedResponsibleData.name}
                   </h3>
                   <p className="text-sm text-gray-600">
-                    {selectedResponsibleData.role} • {filteredTickets.filter(t => t.assigned_to === selectedResponsibleData.id).length} tickets resueltos
+                    {selectedResponsibleData.role} • {tickets.filter(t => t && (t.status === Status.RESOLVED || t.status === Status.CLOSED) && t.assigned_to === selectedResponsibleData.id).length} tickets resueltos
                   </p>
                 </div>
                 <button
@@ -1694,11 +1697,20 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
             </div>
             
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              {filteredTickets.filter(t => t.assigned_to === selectedResponsibleData.id).length > 0 ? (
-                <div className="space-y-4">
-                  {filteredTickets
-                    .filter(t => t.assigned_to === selectedResponsibleData.id)
-                    .map((ticket) => (
+              {(() => {
+                // Obtener todos los tickets resueltos/cerrados para este responsable específico
+                const responsibleTickets = tickets.filter(ticket => 
+                  ticket && 
+                  (ticket.status === Status.RESOLVED || ticket.status === Status.CLOSED) &&
+                  ticket.assigned_to === selectedResponsibleData.id
+                )
+                console.log("[v0] Modal - All tickets:", tickets)
+                console.log("[v0] Modal - Responsible tickets found:", responsibleTickets)
+                console.log("[v0] Modal - Selected responsible ID:", selectedResponsibleData.id)
+                
+                return responsibleTickets.length > 0 ? (
+                  <div className="space-y-4">
+                    {responsibleTickets.map((ticket) => (
                       <div key={ticket.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -1729,15 +1741,16 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
                         </div>
                       </div>
                     ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <p className="text-gray-500">No hay tickets resueltos para este responsable</p>
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p className="text-gray-500">No hay tickets resueltos para este responsable</p>
+                  </div>
+                )
+              })()}
             </div>
             
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
