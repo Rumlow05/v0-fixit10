@@ -894,13 +894,24 @@ const TicketsView = ({
   const canResolve = [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role)
   const canCreate = true
 
-  const filteredTickets = isUserRole ? tickets.filter((t) => t && t.requesterId === currentUser.id) : tickets.filter((t) => t)
+  // Filtrar tickets activos (excluir resueltos y cerrados)
+  const filteredTickets = isUserRole 
+    ? tickets.filter((t) => t && t.requesterId === currentUser.id && t.status !== Status.RESOLVED && t.status !== Status.CLOSED)
+    : tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED)
+  
+  console.log("[v0] MainView - All tickets:", tickets.length)
+  console.log("[v0] MainView - Filtered tickets (active only):", filteredTickets.length)
+  console.log("[v0] MainView - Tickets by status:", {
+    open: tickets.filter(t => t && t.status === Status.OPEN).length,
+    inProgress: tickets.filter(t => t && t.status === Status.IN_PROGRESS).length,
+    resolved: tickets.filter(t => t && t.status === Status.RESOLVED).length,
+    closed: tickets.filter(t => t && t.status === Status.CLOSED).length
+  })
 
   const stats = {
     total: filteredTickets.length,
     open: filteredTickets.filter((t) => t && t.status === Status.OPEN).length,
     inProgress: filteredTickets.filter((t) => t && t.status === Status.IN_PROGRESS).length,
-    resolved: filteredTickets.filter((t) => t && t.status === Status.RESOLVED).length,
     high: filteredTickets.filter((t) => t && (t.priority === Priority.HIGH || t.priority === Priority.CRITICAL)).length,
   }
 
@@ -1320,15 +1331,17 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
       CLOSED: Status.CLOSED
     })
     
+    // Incluir tanto tickets resueltos como cerrados
     let resolvedTickets = tickets.filter(ticket => {
+      const isResolved = ticket && (ticket.status === Status.RESOLVED || ticket.status === Status.CLOSED)
       console.log("[v0] ResolvedTicketsView - Checking ticket:", {
         id: ticket?.id,
         title: ticket?.title,
         status: ticket?.status,
         statusType: typeof ticket?.status,
-        matches: ticket?.status === Status.RESOLVED
+        isResolved: isResolved
       })
-      return ticket && ticket.status === Status.RESOLVED
+      return isResolved
     })
     console.log("[v0] ResolvedTicketsView - Resolved tickets found:", resolvedTickets.length, resolvedTickets)
     
