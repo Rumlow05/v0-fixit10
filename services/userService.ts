@@ -140,13 +140,13 @@ function getRoleDbValue(role: Role): string {
     case Role.ADMIN: // 'Administrador'
       return "admin"
     case Role.USER: // 'Usuario'
-      return "level1" // Mapping Usuario to level1 since 'user' might not be allowed
+      return "user"
     case Role.LEVEL_1: // 'Nivel 1'
       return "level1"
     case Role.LEVEL_2: // 'Nivel 2'
       return "level2"
     default:
-      return "level1"
+      return "user"
   }
 }
 
@@ -154,8 +154,10 @@ function getRoleEnumValue(dbRole: string): Role {
   switch (dbRole) {
     case "admin":
       return Role.ADMIN // 'Administrador'
+    case "user":
+      return Role.USER // 'Usuario'
     case "level1":
-      return Role.LEVEL_1 // 'Nivel 1' - corregido para mantener el rol correcto
+      return Role.LEVEL_1 // 'Nivel 1'
     case "level2":
       return Role.LEVEL_2 // 'Nivel 2'
     default:
