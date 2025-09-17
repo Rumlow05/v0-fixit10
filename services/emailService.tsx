@@ -16,6 +16,8 @@ interface TicketNotificationData {
   assignedTo?: string
   createdBy: string
   createdAt: string
+  resolutionMessage?: string
+  wasResolved?: boolean
 }
 
 class EmailService {
@@ -166,6 +168,13 @@ class EmailService {
                 <p><strong>Estado actual:</strong> ${data.status}</p>
                 <p><strong>Prioridad:</strong> <span class="priority" style="background-color: ${priorityColor}">${data.priority}</span></p>
                 ${data.assignedTo ? `<p><strong>Asignado a:</strong> ${data.assignedTo}</p>` : ""}
+                ${data.resolutionMessage ? `
+                  <div style="margin-top: 15px; padding: 10px; background-color: ${data.wasResolved ? '#d1fae5' : '#fee2e2'}; border-radius: 6px; border-left: 4px solid ${data.wasResolved ? '#10b981' : '#ef4444'};">
+                    <p><strong>${data.wasResolved ? '✅ Problema Resuelto' : '❌ Problema No Resuelto'}</strong></p>
+                    <p><strong>Mensaje de resolución:</strong></p>
+                    <p style="margin-top: 5px; font-style: italic;">${data.resolutionMessage}</p>
+                  </div>
+                ` : ""}
               </div>
               
               <p>Puedes revisar los detalles completos accediendo al sistema FixIT.</p>

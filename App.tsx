@@ -896,6 +896,110 @@ const ChangePriorityModal = ({
   )
 }
 
+const ResolutionModal = ({
+  isOpen,
+  onClose,
+  onResolve,
+  ticketTitle,
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onResolve: (resolutionMessage: string, wasResolved: boolean) => void;
+  ticketTitle: string;
+}) => {
+  const [resolutionMessage, setResolutionMessage] = useState("")
+  const [wasResolved, setWasResolved] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      setResolutionMessage("")
+      setWasResolved(null)
+    }
+  }, [isOpen])
+
+  if (!isOpen) return null
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (resolutionMessage.trim() && wasResolved !== null) {
+      onResolve(resolutionMessage.trim(), wasResolved)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+        <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+          Resolver Ticket: {ticketTitle}
+        </h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              ¿Se pudo resolver el problema?
+            </label>
+            <div className="flex space-x-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="resolved"
+                  value="yes"
+                  checked={wasResolved === true}
+                  onChange={() => setWasResolved(true)}
+                  className="mr-2"
+                />
+                <span className="text-green-600 font-medium">✅ Sí, se resolvió</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="resolved"
+                  value="no"
+                  checked={wasResolved === false}
+                  onChange={() => setWasResolved(false)}
+                  className="mr-2"
+                />
+                <span className="text-red-600 font-medium">❌ No se pudo resolver</span>
+              </label>
+            </div>
+          </div>
+          
+          <div>
+            <label htmlFor="resolution-message" className="block text-sm font-medium text-gray-700 mb-2">
+              Describe qué sucedió y la solución aplicada:
+            </label>
+            <textarea
+              id="resolution-message"
+              value={resolutionMessage}
+              onChange={(e) => setResolutionMessage(e.target.value)}
+              placeholder="Ejemplo: Se identificó que el problema era... Se aplicó la siguiente solución... El usuario confirmó que funciona correctamente."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              rows={4}
+              required
+            />
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={!resolutionMessage.trim() || wasResolved === null}
+              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              Marcar como Resuelto
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 const AddCommentModal = ({ isOpen, onClose, onAddComment, currentUser }) => {
   const [comment, setComment] = useState("")
 
@@ -978,6 +1082,7 @@ const TicketsView = ({
   setPriorityModalOpen,
   onAddCommentModalOpen,
   setAddCommentModalOpen,
+  setResolutionModalOpen,
 }) => {
   const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(false)
   
@@ -1284,7 +1389,7 @@ const TicketsView = ({
 
                 {canResolve && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
                   <button
-                    onClick={() => onResolveTicket(selectedTicket.id)}
+                    onClick={() => setResolutionModalOpen(true)}
                     className="px-6 py-3 text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Marcar como Resuelto
@@ -2030,6 +2135,7 @@ const App: React.FC = () => {
   const [isAssignTicketModalOpen, setAssignTicketModalOpen] = useState(false)
   const [isAddCommentModalOpen, setAddCommentModalOpen] = useState(false)
   const [isPriorityModalOpen, setIsPriorityModalOpen] = useState(false)
+  const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false)
 
   // --- Effects for Data Persistence ---
   useEffect(() => {
@@ -2187,6 +2293,14 @@ const App: React.FC = () => {
 
   const closePriorityModal = () => {
     setIsPriorityModalOpen(false)
+  }
+
+  const openResolutionModal = () => {
+    setIsResolutionModalOpen(true)
+  }
+
+  const closeResolutionModal = () => {
+    setIsResolutionModalOpen(false)
   }
 
   const handleSelectTicket = async (ticket: Ticket) => {
@@ -2576,6 +2690,49 @@ const App: React.FC = () => {
     }
   }
 
+  const handleResolveWithMessage = async (resolutionMessage: string, wasResolved: boolean) => {
+    if (!selectedTicket) return
+
+    try {
+      // Actualizar el ticket a resuelto
+      await handleUpdateTicket(selectedTicket.id, { status: Status.RESOLVED })
+      
+      // Crear mensaje de resolución
+      const resolutionStatus = wasResolved ? "✅ RESUELTO" : "❌ NO RESUELTO"
+      const resolutionComment = `**${resolutionStatus}**\n\n**Mensaje de resolución:**\n${resolutionMessage}`
+      
+      // Agregar comentario con el mensaje de resolución
+      await handleAddComment(resolutionComment)
+      
+      setIsResolutionModalOpen(false)
+
+      // Send notification email al solicitante
+      const requester = users.find((u) => u.id === selectedTicket.requesterId)
+      if (requester) {
+        await sendEmailNotification(
+          "ticket-updated",
+          {
+            ticketId: selectedTicket.id.toString(),
+            title: selectedTicket.title,
+            description: selectedTicket.description,
+            priority: selectedTicket.priority,
+            status: Status.RESOLVED,
+            assignedTo: users.find(u => u.id === selectedTicket.assigned_to)?.name || "Sin Asignar",
+            createdBy: users.find(u => u.id === selectedTicket.requesterId)?.name || "Desconocido",
+            createdAt: selectedTicket.created_at,
+            resolutionMessage: resolutionMessage,
+            wasResolved: wasResolved,
+          },
+          requester.email,
+          "Ticket resuelto"
+        )
+      }
+    } catch (error) {
+      console.error("[v0] Error resolving ticket with message:", error)
+      alert("Error al resolver el ticket. Por favor intenta de nuevo.")
+    }
+  }
+
   if (isLoadingUsers || isLoadingTickets) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -2672,6 +2829,7 @@ const App: React.FC = () => {
               onAddCommentModalOpen={openAddCommentModal}
               setAddCommentModalOpen={setAddCommentModalOpen}
               setPriorityModalOpen={setIsPriorityModalOpen}
+              setResolutionModalOpen={setIsResolutionModalOpen}
             />
           ) : currentView === "resolved" ? (
             <ResolvedTicketsView
@@ -2723,6 +2881,12 @@ const App: React.FC = () => {
             onClose={closePriorityModal}
             onPriorityChange={handleChangePriority}
             currentPriority={selectedTicket?.priority || Priority.MEDIUM}
+          />
+          <ResolutionModal
+            isOpen={isResolutionModalOpen}
+            onClose={closeResolutionModal}
+            onResolve={handleResolveWithMessage}
+            ticketTitle={selectedTicket?.title || ""}
           />
         </div>
       )}
