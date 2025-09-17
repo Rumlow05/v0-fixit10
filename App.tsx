@@ -804,6 +804,96 @@ const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
   )
 }
 
+const ChangePriorityModal = ({
+  isOpen,
+  onClose,
+  onPriorityChange,
+  currentPriority,
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onPriorityChange: (priority: Priority) => void;
+  currentPriority: Priority;
+}) => {
+  const [selectedPriority, setSelectedPriority] = useState<Priority>(currentPriority)
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedPriority(currentPriority)
+    }
+  }, [isOpen, currentPriority])
+
+  if (!isOpen) return null
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onPriorityChange(selectedPriority)
+  }
+
+  const getPriorityColor = (priority: Priority) => {
+    switch (priority) {
+      case Priority.LOW:
+        return "bg-green-100 text-green-800 border-green-200"
+      case Priority.MEDIUM:
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case Priority.HIGH:
+        return "bg-red-100 text-red-800 border-red-200"
+      case Priority.CRITICAL:
+        return "bg-red-200 text-red-900 border-red-300"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+        <h3 className="text-lg font-medium leading-6 text-gray-900">Cambiar Prioridad del Ticket</h3>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div>
+            <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
+              Selecciona la nueva prioridad:
+            </label>
+            <div className="space-y-2">
+              {Object.values(Priority).map((priority) => (
+                <label key={priority} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="priority"
+                    value={priority}
+                    checked={selectedPriority === priority}
+                    onChange={(e) => setSelectedPriority(e.target.value as Priority)}
+                    className="mr-3"
+                  />
+                  <span className={`px-3 py-1 text-sm font-medium rounded-lg border ${getPriorityColor(priority)}`}>
+                    {priority}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+            >
+              Cambiar Prioridad
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 const AddCommentModal = ({ isOpen, onClose, onAddComment, currentUser }) => {
   const [comment, setComment] = useState("")
 
@@ -1172,6 +1262,15 @@ const TicketsView = ({
                     className="px-6 py-3 text-sm font-semibold text-white bg-orange-600 rounded-xl hover:bg-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Transferir a Nivel 2
+                  </button>
+                )}
+
+                {canResolve && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
+                  <button
+                    onClick={() => setIsPriorityModalOpen(true)}
+                    className="px-6 py-3 text-sm font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Cambiar Prioridad
                   </button>
                 )}
 
@@ -1922,6 +2021,7 @@ const App: React.FC = () => {
   const [isCreateTicketModalOpen, setCreateTicketModalOpen] = useState(false)
   const [isAssignTicketModalOpen, setAssignTicketModalOpen] = useState(false)
   const [isAddCommentModalOpen, setAddCommentModalOpen] = useState(false)
+  const [isPriorityModalOpen, setIsPriorityModalOpen] = useState(false)
 
   // --- Effects for Data Persistence ---
   useEffect(() => {
@@ -2071,6 +2171,14 @@ const App: React.FC = () => {
 
   const closeAddCommentModal = () => {
     setAddCommentModalOpen(false)
+  }
+
+  const openPriorityModal = () => {
+    setIsPriorityModalOpen(true)
+  }
+
+  const closePriorityModal = () => {
+    setIsPriorityModalOpen(false)
   }
 
   const handleSelectTicket = async (ticket: Ticket) => {
@@ -2420,6 +2528,46 @@ const App: React.FC = () => {
     }
   }
 
+  const handleChangePriority = async (newPriority: Priority) => {
+    if (!selectedTicket) return
+
+    try {
+      await handleUpdateTicket(selectedTicket.id, {
+        priority: newPriority,
+      })
+      
+      // Agregar comentario automático sobre el cambio de prioridad
+      await handleAddComment(
+        `Prioridad cambiada de "${selectedTicket.priority}" a "${newPriority}"`
+      )
+      
+      setIsPriorityModalOpen(false)
+
+      // Send notification email al solicitante
+      const requester = users.find((u) => u.id === selectedTicket.requesterId)
+      if (requester) {
+        await sendEmailNotification(
+          "ticket-updated",
+          {
+            ticketId: selectedTicket.id.toString(),
+            title: selectedTicket.title,
+            description: selectedTicket.description,
+            priority: newPriority,
+            status: selectedTicket.status,
+            assignedTo: users.find(u => u.id === selectedTicket.assigned_to)?.name || "Sin Asignar",
+            createdBy: users.find(u => u.id === selectedTicket.requesterId)?.name || "Desconocido",
+            createdAt: selectedTicket.created_at,
+          },
+          requester.email,
+          "Cambio de prioridad"
+        )
+      }
+    } catch (error) {
+      console.error("[v0] Error changing priority:", error)
+      alert("Error al cambiar la prioridad. Por favor intenta de nuevo.")
+    }
+  }
+
   if (isLoadingUsers || isLoadingTickets) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -2560,6 +2708,12 @@ const App: React.FC = () => {
             onClose={closeAddCommentModal}
             onAddComment={handleAddComment}
             currentUser={currentUser}
+          />
+          <ChangePriorityModal
+            isOpen={isPriorityModalOpen}
+            onClose={closePriorityModal}
+            onPriorityChange={handleChangePriority}
+            currentPriority={selectedTicket?.priority || Priority.MEDIUM}
           />
         </div>
       )}
