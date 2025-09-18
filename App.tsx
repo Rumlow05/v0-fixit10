@@ -2327,11 +2327,25 @@ const App: React.FC = () => {
   const [whatsappStatus, setWhatsappStatus] = useState<{isConnected: boolean, needsQR: boolean}>({isConnected: false, needsQR: false})
   const [isSyncing, setIsSyncing] = useState(false)
 
-  // Limpiar entradas antiguas de usuarios eliminados
+  // Limpiar entradas antiguas de usuarios eliminados y asegurar consistencia
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
+      // Limpiar eventos antiguos
+      const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
       const now = new Date()
+      const cleanedEvents = events.filter((event: any) => {
+        const eventTime = new Date(event.timestamp)
+        const hoursDiff = (now.getTime() - eventTime.getTime()) / (1000 * 60 * 60)
+        return hoursDiff < 24 // Mantener solo por 24 horas
+      })
+      
+      if (cleanedEvents.length !== events.length) {
+        localStorage.setItem('fixit_events', JSON.stringify(cleanedEvents))
+        console.log("[v0] Cleaned old events")
+      }
+      
+      // Limpiar usuarios eliminados antiguos
+      const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
       const cleanedDeletedUsers = deletedUsers.filter((du: any) => {
         const deletedAt = new Date(du.deletedAt)
         const hoursDiff = (now.getTime() - deletedAt.getTime()) / (1000 * 60 * 60)
@@ -2341,6 +2355,14 @@ const App: React.FC = () => {
       if (cleanedDeletedUsers.length !== deletedUsers.length) {
         localStorage.setItem('fixit_deletedUsers', JSON.stringify(cleanedDeletedUsers))
         console.log("[v0] Cleaned old deleted user entries")
+      }
+      
+      // Asegurar que el usuario base esté en localStorage de usuarios
+      const storedUsers = JSON.parse(localStorage.getItem('fixit_mock_users') || '[]')
+      const baseUserExists = storedUsers.find((u: any) => u.email === "tech@emprendetucarrera.com.co")
+      
+      if (!baseUserExists) {
+        console.log("[v0] Base user not found in localStorage, will be loaded from default data")
       }
     }
   }, [])
@@ -2590,8 +2612,14 @@ const App: React.FC = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     if (loginEmail === "tech@emprendetucarrera.com.co") {
-      setShowRoleSelection(true)
-      setLoginError("")
+      // Buscar el usuario base en la base de datos
+      const baseUser = users.find((u) => u.email === "tech@emprendetucarrera.com.co")
+      if (baseUser) {
+        setShowRoleSelection(true)
+        setLoginError("")
+      } else {
+        setLoginError("Usuario administrador no encontrado en la base de datos.")
+      }
       return
     }
     
@@ -2616,19 +2644,19 @@ const App: React.FC = () => {
   }
 
   const handleSelectRole = (role: Role) => {
+    // Solo usar usuarios reales de la base de datos
     let userToImpersonate = users.find((u) => u.role === role)
 
     if (!userToImpersonate) {
-      // Create a temporary demo user for the selected role
-      userToImpersonate = {
-        id: `demo-${role}`,
-        name: `Demo ${role}`,
-        email: "tech@emprendetucarrera.com.co",
-        role: role,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+      // Si no hay usuario con ese rol, usar el usuario base tech@emprendetucarrera.com.co
+      userToImpersonate = users.find((u) => u.email === "tech@emprendetucarrera.com.co")
+      
+      if (!userToImpersonate) {
+        setLoginError("No se encontró el usuario administrador en la base de datos.")
+        return
       }
-      console.log("[v0] Created temporary demo user for role:", role)
+      
+      console.log("[v0] Using base admin user for role:", role)
     }
 
     setCurrentUser(userToImpersonate)
