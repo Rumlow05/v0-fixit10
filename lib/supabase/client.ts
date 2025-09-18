@@ -1,3 +1,5 @@
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+
 interface MockSupabaseClient {
   from: (table: string) => {
     select: (columns: string) => {
@@ -272,6 +274,21 @@ export function createClient(): MockSupabaseClient {
         },
       }),
     }),
+  }
+}
+
+// Función para crear cliente - usa Supabase real si está configurado, sino usa mock
+export function createClient() {
+  // Verificar si las variables de entorno de Supabase están configuradas
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (supabaseUrl && supabaseAnonKey) {
+    console.log("[v0] Using real Supabase connection")
+    return createSupabaseClient(supabaseUrl, supabaseAnonKey)
+  } else {
+    console.log("[v0] Using mock Supabase client (no environment variables found)")
+    return createMockClient()
   }
 }
 
