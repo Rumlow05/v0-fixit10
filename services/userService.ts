@@ -157,21 +157,16 @@ export async function deleteUser(id: string): Promise<void> {
   
   console.log("[v0] Server-side: User found, proceeding with deletion:", existingUser)
   
-  const { data, error } = await supabase.from("users").delete().eq("id", id).select()
+  const { error } = await supabase.from("users").delete().eq("id", id)
   
-  console.log("[v0] Server-side: Delete result - data:", data, "error:", error)
+  console.log("[v0] Server-side: Delete result - error:", error)
 
   if (error) {
     console.error("[v0] Server-side: Error deleting user:", error)
     throw new Error("Error al eliminar usuario")
   }
   
-  if (!data || data.length === 0) {
-    console.error("[v0] Server-side: No data returned from delete operation")
-    throw new Error("No se pudo eliminar el usuario")
-  }
-  
-  console.log("[v0] Server-side: User deleted successfully from Supabase:", data)
+  console.log("[v0] Server-side: User delete command executed successfully")
   
   // Verificar que realmente se eliminó
   const { data: verifyUser, error: verifyError } = await supabase
@@ -372,22 +367,17 @@ export const userServiceClient = {
     
     console.log("[v0] User found, proceeding with deletion:", existingUser)
     
-    // Ahora eliminar el usuario
-    const { data, error } = await supabase.from("users").delete().eq("id", id).select()
+    // Ahora eliminar el usuario (sin .select() para evitar problemas con RLS)
+    const { error } = await supabase.from("users").delete().eq("id", id)
     
-    console.log("[v0] Delete result - data:", data, "error:", error)
+    console.log("[v0] Delete result - error:", error)
 
     if (error) {
       console.error("[v0] Error deleting user:", error)
       throw new Error("Error al eliminar usuario")
     }
     
-    if (!data || data.length === 0) {
-      console.error("[v0] No data returned from delete operation")
-      throw new Error("No se pudo eliminar el usuario")
-    }
-    
-    console.log("[v0] User deleted successfully from Supabase:", data)
+    console.log("[v0] User delete command executed successfully")
     
     // Verificar que realmente se eliminó
     const { data: verifyUser, error: verifyError } = await supabase
