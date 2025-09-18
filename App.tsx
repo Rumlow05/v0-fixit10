@@ -368,7 +368,7 @@ const TransferToLevel2Modal = ({
   )
 }
 
-const Sidebar = ({ currentUser, currentView, setCurrentView, onLogout, setCreateTicketModalOpen, setIsWhatsAppAdminOpen }) => {
+const Sidebar = ({ currentUser, currentView, setCurrentView, onLogout, setCreateTicketModalOpen, setIsWhatsAppAdminOpen, isSyncing }) => {
   console.log("[v0] Current user in Sidebar:", currentUser)
   console.log("[v0] User role:", currentUser.role)
   console.log("[v0] Is admin?", currentUser.role === Role.ADMIN)
@@ -3412,6 +3412,7 @@ const App: React.FC = () => {
             onLogout={handleLogout}
             setCreateTicketModalOpen={openCreateTicketModal}
             setIsWhatsAppAdminOpen={setIsWhatsAppAdminOpen}
+            isSyncing={isSyncing}
           />
           {currentView === "tickets" ? (
             <TicketsView
