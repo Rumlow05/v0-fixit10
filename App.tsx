@@ -79,66 +79,8 @@ const IconSpinner = () => (
   </svg>
 )
 
-// --- Mock Data ---
-const initialUsers: User[] = [
-  { id: 1, name: "Ana Usuario", email: "ana@empresa.com", role: Role.USER },
-  { id: 2, name: "Alicia Admin", email: "alicia@empresa.com", role: Role.ADMIN },
-  { id: 3, name: "Beto N1", email: "beto@empresa.com", role: Role.LEVEL_1 },
-  { id: 4, name: "Carlos N2", email: "carlos@empresa.com", role: Role.LEVEL_2 },
-  { id: 5, name: "María Usuario", email: "maria@empresa.com", role: Role.USER },
-  { id: 6, name: "Pedro N1", email: "pedro@empresa.com", role: Role.LEVEL_1 },
-  { id: 7, name: "Laura N2", email: "laura@empresa.com", role: Role.LEVEL_2 },
-]
-
-const initialTickets: Ticket[] = [
-  {
-    id: 1,
-    title: "La impresora no funciona",
-    description: 'Mi impresora de red en el segundo piso no imprime. Da un error de "sin papel" pero tiene papel.',
-    requesterId: 1,
-    assigneeId: 3,
-    status: Status.IN_PROGRESS,
-    priority: Priority.MEDIUM,
-    category: "Hardware",
-    createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000).toISOString(),
-    comments: [
-      { id: 1, author: "Beto N1", text: "Revisando la cola de impresión.", timestamp: new Date().toISOString() },
-    ],
-  },
-  {
-    id: 2,
-    title: "Necesito acceso a la carpeta de Marketing",
-    description: "No puedo acceder a //server/marketing. Necesito acceso de lectura/escritura.",
-    requesterId: 1,
-    status: Status.OPEN,
-    priority: Priority.LOW,
-    category: "Solicitud de Acceso",
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    comments: [],
-  },
-  {
-    id: 3,
-    title: "El sistema CRM está muy lento",
-    description: "Desde ayer, cada vez que guardo un cliente nuevo, el sistema tarda casi un minuto en responder.",
-    requesterId: 1,
-    assigneeId: 4,
-    status: Status.IN_PROGRESS,
-    priority: Priority.HIGH,
-    category: "Software",
-    createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    updatedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    comments: [
-      {
-        id: 1,
-        author: "Alicia Admin",
-        text: "Escalado a Nivel 2 para revisión de rendimiento.",
-        timestamp: new Date().toISOString(),
-      },
-    ],
-  },
-]
+// Los datos se cargan desde el mock client en lib/supabase/client.ts
+// No hay datos iniciales duplicados aquí
 
 // --- Sub-components ---
 
@@ -250,11 +192,11 @@ const UserManagementModal = ({
   onSave,
   user,
 }: { isOpen: boolean; onClose: () => void; onSave: (user: User) => void; user: User | null }) => {
-  const [formData, setFormData] = useState({ id: 0, name: "", email: "", role: Role.USER })
+  const [formData, setFormData] = useState({ id: "", name: "", email: "", role: Role.USER })
 
   useEffect(() => {
     setFormData({
-      id: user?.id || 0,
+      id: user?.id || "",
       name: user?.name || "",
       email: user?.email || "",
       role: user?.role || Role.USER,
@@ -364,8 +306,8 @@ const TransferToLevel2Modal = ({
   onClose,
   onTransfer,
   level2Users,
-}: { isOpen: boolean; onClose: () => void; onTransfer: (userId: number) => void; level2Users: User[] }) => {
-  const [selectedUserId, setSelectedUserId] = useState<number | undefined>(level2Users?.[0]?.id)
+}: { isOpen: boolean; onClose: () => void; onTransfer: (userId: string) => void; level2Users: User[] }) => {
+  const [selectedUserId, setSelectedUserId] = useState<string | undefined>(level2Users?.[0]?.id)
 
   useEffect(() => {
     if (isOpen && level2Users?.length > 0 && !selectedUserId) {
@@ -2915,7 +2857,7 @@ const App: React.FC = () => {
     }
   }
 
-  const handleTransferToLevel2 = async (assigneeId: number) => {
+  const handleTransferToLevel2 = async (assigneeId: string) => {
     if (!selectedTicket) return
 
     try {
