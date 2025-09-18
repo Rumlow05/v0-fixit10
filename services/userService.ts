@@ -129,12 +129,23 @@ export async function updateUser(id: string, userData: Partial<CreateUserData>):
 export async function deleteUser(id: string): Promise<void> {
   const supabase = await createClient()
 
-  const { error } = await supabase.from("users").delete().eq("id", id)
+  console.log("[v0] Server-side: Attempting to delete user with ID:", id)
+  
+  const { data, error } = await supabase.from("users").delete().eq("id", id).select()
+  
+  console.log("[v0] Server-side: Delete result - data:", data, "error:", error)
 
   if (error) {
-    console.error("[v0] Error deleting user:", error)
+    console.error("[v0] Server-side: Error deleting user:", error)
     throw new Error("Error al eliminar usuario")
   }
+  
+  if (data && data.length === 0) {
+    console.warn("[v0] Server-side: No user found with ID:", id)
+    throw new Error("Usuario no encontrado")
+  }
+  
+  console.log("[v0] Server-side: User deleted successfully from Supabase")
 }
 
 function getRoleDbValue(role: Role): string {
@@ -290,11 +301,22 @@ export const userServiceClient = {
   async deleteUser(id: string): Promise<void> {
     const supabase = createBrowserClient()
 
-    const { error } = await supabase.from("users").delete().eq("id", id)
+    console.log("[v0] Attempting to delete user with ID:", id)
+    
+    const { data, error } = await supabase.from("users").delete().eq("id", id).select()
+    
+    console.log("[v0] Delete result - data:", data, "error:", error)
 
     if (error) {
       console.error("[v0] Error deleting user:", error)
       throw new Error("Error al eliminar usuario")
     }
+    
+    if (data && data.length === 0) {
+      console.warn("[v0] No user found with ID:", id)
+      throw new Error("Usuario no encontrado")
+    }
+    
+    console.log("[v0] User deleted successfully from Supabase")
   },
 }

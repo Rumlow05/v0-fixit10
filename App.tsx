@@ -2489,6 +2489,11 @@ const App: React.FC = () => {
         const freshUsers = await userServiceClient.getAllUsers()
         const freshTickets = await ticketServiceClient.getAllTickets()
         
+        console.log("[v0] Fresh users from Supabase:", freshUsers.length, "users")
+        console.log("[v0] Fresh users details:", freshUsers.map(u => ({ id: u.id, email: u.email, name: u.name })))
+        console.log("[v0] Current users in state:", users.length, "users")
+        console.log("[v0] Current users details:", users.map(u => ({ id: u.id, email: u.email, name: u.name })))
+        
         // Verificar si el usuario actual sigue existiendo
         const currentUserExists = freshUsers.find(u => u.id === currentUser.id && u.email === currentUser.email)
         
@@ -2506,6 +2511,10 @@ const App: React.FC = () => {
         const usersChanged = JSON.stringify(freshUsers) !== JSON.stringify(users)
         if (usersChanged) {
           console.log("[v0] User data changed, updating...")
+          console.log("[v0] Users that were added/restored:", 
+            freshUsers.filter(fu => !users.find(u => u.id === fu.id))
+              .map(u => ({ id: u.id, email: u.email, name: u.name }))
+          )
           setUsers(freshUsers)
         }
         
