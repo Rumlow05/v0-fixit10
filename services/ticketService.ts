@@ -34,7 +34,7 @@ export async function getAllTickets(): Promise<Ticket[]> {
       .select(`
         *,
         assigned_user:assigned_to(name, email),
-        creator:created_by(name, email)
+        creator:requester_id(name, email)
       `)
       .order("created_at", { ascending: false })
 
@@ -58,7 +58,7 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
     .select(`
       *,
       assigned_user:assigned_to(name, email),
-      creator:created_by(name, email)
+      creator:requester_id(name, email)
     `)
     .eq("id", id)
     .single()
@@ -83,7 +83,7 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
     .select(`
       *,
       assigned_user:assigned_to(name, email),
-      creator:created_by(name, email)
+      creator:requester_id(name, email)
     `)
     .single()
 
@@ -113,7 +113,7 @@ export async function updateTicket(id: string, ticketData: UpdateTicketData): Pr
     .select(`
       *,
       assigned_user:assigned_to(name, email),
-      creator:created_by(name, email)
+      creator:requester_id(name, email)
     `)
     .single()
 
@@ -144,9 +144,9 @@ export async function getTicketsByUser(userId: string): Promise<Ticket[]> {
     .select(`
       *,
       assigned_user:assigned_to(name, email),
-      creator:created_by(name, email)
+      creator:requester_id(name, email)
     `)
-    .or(`created_by.eq.${userId},assigned_to.eq.${userId}`)
+    .or(`requester_id.eq.${userId},assigned_to.eq.${userId}`)
     .order("created_at", { ascending: false })
 
   if (error) {
@@ -168,7 +168,7 @@ export const ticketServiceClient = {
         .select(`
           *,
           assigned_user:assigned_to(name, email),
-          creator:created_by(name, email)
+          creator:requester_id(name, email)
         `)
         .order("created_at", { ascending: false })
 
@@ -193,7 +193,7 @@ export const ticketServiceClient = {
       .select(`
         *,
         assigned_user:assigned_to(name, email),
-        creator:created_by(name, email)
+        creator:requester_id(name, email)
       `)
       .single()
 
@@ -223,7 +223,7 @@ export const ticketServiceClient = {
       .select(`
         *,
         assigned_user:assigned_to(name, email),
-        creator:created_by(name, email)
+        creator:requester_id(name, email)
       `)
       .single()
 

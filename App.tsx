@@ -3113,7 +3113,7 @@ const App: React.FC = () => {
             priority: selectedTicket.priority,
             status: selectedTicket.status,
             assignedTo: assignee.name,
-            createdBy: users.find(u => u.id === selectedTicket.created_by)?.name || "Desconocido",
+            createdBy: users.find(u => u.id === selectedTicket.requesterId)?.name || "Desconocido",
             createdAt: selectedTicket.created_at,
           },
           assignee.email,
@@ -3135,7 +3135,7 @@ const App: React.FC = () => {
 
       // Send notification email
       const ticket = tickets.find((t) => t && t.id === ticketId)
-      const requester = users.find((u) => u.id === ticket?.created_by)
+      const requester = users.find((u) => u.id === ticket?.requesterId)
       if (ticket && requester) {
         await sendEmailNotification(
           "ticket-updated",
@@ -3209,7 +3209,7 @@ const App: React.FC = () => {
             priority: selectedTicket.priority,
             status: selectedTicket.status,
             assignedTo: assignee.name,
-            createdBy: users.find(u => u.id === selectedTicket.created_by)?.name || "Desconocido",
+            createdBy: users.find(u => u.id === selectedTicket.requesterId)?.name || "Desconocido",
             createdAt: selectedTicket.created_at,
           },
           assignee.email,
