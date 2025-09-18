@@ -3169,8 +3169,16 @@ const App: React.FC = () => {
         timestamp: new Date().toISOString(),
       }
 
-      const updatedComments = [...(selectedTicket.comments || []), newComment]
-      await handleUpdateTicket(selectedTicket.id, { comments: updatedComments })
+      // Crear comentario en la tabla comments
+      const { commentService } = await import("@/services/commentService")
+      await commentService.createComment({
+        ticket_id: selectedTicket.id,
+        user_id: currentUser.id,
+        content: commentText
+      })
+      
+      // Refrescar la vista de tickets
+      await loadTickets()
       closeAddCommentModal()
     } catch (error) {
       console.error("[v0] Error adding comment:", error)

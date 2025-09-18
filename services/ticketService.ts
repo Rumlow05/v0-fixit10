@@ -34,7 +34,8 @@ export async function getAllTickets(): Promise<Ticket[]> {
       .select(`
         *,
         assigned_user:assigned_to(name, email),
-        creator:requester_id(name, email)
+        creator:requester_id(name, email),
+      comments:ticket_comments(*, user:user_id(name, email))
       `)
       .order("created_at", { ascending: false })
 
@@ -168,7 +169,8 @@ export const ticketServiceClient = {
         .select(`
           *,
           assigned_user:assigned_to(name, email),
-          creator:requester_id(name, email)
+          creator:requester_id(name, email),
+      comments:ticket_comments(*, user:user_id(name, email))
         `)
         .order("created_at", { ascending: false })
 
@@ -193,7 +195,8 @@ export const ticketServiceClient = {
       .select(`
         *,
         assigned_user:assigned_to(name, email),
-        creator:requester_id(name, email)
+        creator:requester_id(name, email),
+      comments:ticket_comments(*, user:user_id(name, email))
       `)
       .single()
 
@@ -223,7 +226,8 @@ export const ticketServiceClient = {
       .select(`
         *,
         assigned_user:assigned_to(name, email),
-        creator:requester_id(name, email)
+        creator:requester_id(name, email),
+      comments:ticket_comments(*, user:user_id(name, email))
       `)
       .single()
 
