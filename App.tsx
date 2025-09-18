@@ -2264,8 +2264,25 @@ const App: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
-    const savedUser = localStorage.getItem("fixit_currentUser")
-    return savedUser ? JSON.parse(savedUser) : null
+      const savedUser = localStorage.getItem("fixit_currentUser")
+      if (savedUser) {
+        const user = JSON.parse(savedUser)
+        
+        // Verificar si el usuario fue eliminado
+        const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
+        const isDeleted = deletedUsers.find((du: any) => du.id === user.id || du.email === user.email)
+        
+        if (isDeleted) {
+          console.log("[v0] Saved user was deleted, clearing session")
+          localStorage.removeItem("fixit_currentUser")
+          // Limpiar la entrada de usuario eliminado
+          const updatedDeletedUsers = deletedUsers.filter((du: any) => du.id !== user.id && du.email !== user.email)
+          localStorage.setItem('fixit_deletedUsers', JSON.stringify(updatedDeletedUsers))
+          return null
+        }
+        
+        return user
+      }
     }
     return null
   })
@@ -2302,6 +2319,24 @@ const App: React.FC = () => {
   const [isWhatsAppAdminOpen, setIsWhatsAppAdminOpen] = useState(false)
   const [whatsappQR, setWhatsappQR] = useState<string | null>(null)
   const [whatsappStatus, setWhatsappStatus] = useState<{isConnected: boolean, needsQR: boolean}>({isConnected: false, needsQR: false})
+
+  // Limpiar entradas antiguas de usuarios eliminados
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
+      const now = new Date()
+      const cleanedDeletedUsers = deletedUsers.filter((du: any) => {
+        const deletedAt = new Date(du.deletedAt)
+        const hoursDiff = (now.getTime() - deletedAt.getTime()) / (1000 * 60 * 60)
+        return hoursDiff < 24 // Mantener solo por 24 horas
+      })
+      
+      if (cleanedDeletedUsers.length !== deletedUsers.length) {
+        localStorage.setItem('fixit_deletedUsers', JSON.stringify(cleanedDeletedUsers))
+        console.log("[v0] Cleaned old deleted user entries")
+      }
+    }
+  }, [])
 
   // --- Effects for Data Persistence ---
   useEffect(() => {
@@ -2365,6 +2400,50 @@ const App: React.FC = () => {
       }
     }
   }, [currentUser])
+
+  // Validar que el usuario actual siga existiendo en la base de datos
+  useEffect(() => {
+    const validateCurrentUser = async () => {
+      if (currentUser && users.length > 0) {
+        console.log("[v0] Validating current user session...")
+        
+        // Verificar si el usuario fue eliminado (marcado en localStorage)
+        if (typeof window !== 'undefined') {
+          const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
+          const isDeleted = deletedUsers.find((du: any) => du.id === currentUser.id || du.email === currentUser.email)
+          
+          if (isDeleted) {
+            console.log("[v0] Current user was deleted, logging out...")
+            alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
+            setCurrentUser(null)
+            localStorage.removeItem("fixit_currentUser")
+            // Limpiar la entrada de usuario eliminado
+            const updatedDeletedUsers = deletedUsers.filter((du: any) => du.id !== currentUser.id && du.email !== currentUser.email)
+            localStorage.setItem('fixit_deletedUsers', JSON.stringify(updatedDeletedUsers))
+            return
+          }
+        }
+        
+        // Verificar si el usuario existe en la base de datos actual
+        const userExists = users.find(u => u.id === currentUser.id && u.email === currentUser.email)
+        
+        if (!userExists) {
+          console.log("[v0] Current user no longer exists in database, logging out...")
+          alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
+          setCurrentUser(null)
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem("fixit_currentUser")
+          }
+        } else {
+          console.log("[v0] Current user session is valid")
+        }
+      }
+    }
+
+    if (databaseReady && users.length > 0) {
+      validateCurrentUser()
+    }
+  }, [currentUser, users, databaseReady])
 
   // --- Event Handlers ---
   const handleLogin = (e: React.FormEvent) => {
@@ -2692,7 +2771,24 @@ const App: React.FC = () => {
         console.log("[v0] User deleted successfully from database")
         setUsers(users.filter((u) => u.id !== userId))
         console.log("[v0] User removed from local state")
-        alert("Usuario eliminado exitosamente")
+        
+        // Invalidar sesiones del usuario eliminado en otros dispositivos
+        if (typeof window !== 'undefined') {
+          const deletedUser = users.find(u => u.id === userId)
+          if (deletedUser) {
+            // Marcar en localStorage que este usuario fue eliminado
+            const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
+            deletedUsers.push({
+              id: userId,
+              email: deletedUser.email,
+              deletedAt: new Date().toISOString()
+            })
+            localStorage.setItem('fixit_deletedUsers', JSON.stringify(deletedUsers))
+            console.log("[v0] User marked as deleted for session invalidation")
+          }
+        }
+        
+        alert("Usuario eliminado exitosamente. Las sesiones activas de este usuario serán invalidadas.")
       } catch (error) {
         console.error("[v0] Error deleting user:", error)
         alert("Error al eliminar usuario. Por favor intenta de nuevo.")
