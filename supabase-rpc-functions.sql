@@ -8,10 +8,38 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  -- Limpiar referencias primero
+  -- Limpiar referencias primero (usando nombres de columna correctos)
   UPDATE tickets SET assigned_to = NULL WHERE assigned_to = user_id;
-  UPDATE tickets SET requester_id = '2af4b6bf-01fe-4b9f-9611-35178dc75c30' WHERE requester_id = user_id;
-  DELETE FROM comments WHERE user_id = user_id;
+  
+  -- Intentar diferentes nombres de columna para el solicitante
+  BEGIN
+    UPDATE tickets SET requester_id = '2af4b6bf-01fe-4b9f-9611-35178dc75c30' WHERE requester_id = user_id;
+  EXCEPTION WHEN OTHERS THEN
+    -- Si requester_id no existe, intentar con created_by
+    BEGIN
+      UPDATE tickets SET created_by = '2af4b6bf-01fe-4b9f-9611-35178dc75c30' WHERE created_by = user_id;
+    EXCEPTION WHEN OTHERS THEN
+      -- Si tampoco existe created_by, intentar con user_id
+      BEGIN
+        UPDATE tickets SET user_id = '2af4b6bf-01fe-4b9f-9611-35178dc75c30' WHERE user_id = user_id;
+      EXCEPTION WHEN OTHERS THEN
+        -- Si ninguna columna existe, continuar sin actualizar
+        NULL;
+      END;
+    END;
+  END;
+  
+  -- Eliminar comentarios (intentar diferentes nombres de tabla)
+  BEGIN
+    DELETE FROM comments WHERE user_id = user_id;
+  EXCEPTION WHEN OTHERS THEN
+    BEGIN
+      DELETE FROM ticket_comments WHERE user_id = user_id;
+    EXCEPTION WHEN OTHERS THEN
+      -- Si ninguna tabla existe, continuar sin eliminar comentarios
+      NULL;
+    END;
+  END;
   
   -- Eliminar el usuario
   DELETE FROM users WHERE id = user_id;

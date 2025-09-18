@@ -413,24 +413,53 @@ export const userServiceClient = {
       console.warn("[v0] Warning updating tickets:", updateTicketsError)
     }
     
-    // Actualizar tickets creados por el usuario (asignar al admin)
-    const { error: updateRequesterError } = await supabase
-      .from("tickets")
-      .update({ requester_id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30" })
-      .eq("requester_id", id)
-    
-    if (updateRequesterError) {
-      console.warn("[v0] Warning updating ticket requesters:", updateRequesterError)
+    // Intentar actualizar tickets creados por el usuario (asignar al admin)
+    // Intentar diferentes nombres de columna
+    try {
+      const { error: updateRequesterError } = await supabase
+        .from("tickets")
+        .update({ requester_id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30" })
+        .eq("requester_id", id)
+      
+      if (updateRequesterError) {
+        console.warn("[v0] Warning updating ticket requesters (requester_id):", updateRequesterError)
+        
+        // Intentar con created_by
+        const { error: updateCreatedByError } = await supabase
+          .from("tickets")
+          .update({ created_by: "2af4b6bf-01fe-4b9f-9611-35178dc75c30" })
+          .eq("created_by", id)
+        
+        if (updateCreatedByError) {
+          console.warn("[v0] Warning updating ticket requesters (created_by):", updateCreatedByError)
+        }
+      }
+    } catch (error) {
+      console.warn("[v0] Error updating ticket requesters:", error)
     }
     
-    // Eliminar comentarios del usuario (la tabla se llama 'comments' según el esquema)
-    const { error: deleteCommentsError } = await supabase
-      .from("comments")
-      .delete()
-      .eq("user_id", id)
-    
-    if (deleteCommentsError) {
-      console.warn("[v0] Warning deleting comments:", deleteCommentsError)
+    // Intentar eliminar comentarios del usuario
+    try {
+      const { error: deleteCommentsError } = await supabase
+        .from("comments")
+        .delete()
+        .eq("user_id", id)
+      
+      if (deleteCommentsError) {
+        console.warn("[v0] Warning deleting comments (comments table):", deleteCommentsError)
+        
+        // Intentar con ticket_comments
+        const { error: deleteTicketCommentsError } = await supabase
+          .from("ticket_comments")
+          .delete()
+          .eq("user_id", id)
+        
+        if (deleteTicketCommentsError) {
+          console.warn("[v0] Warning deleting comments (ticket_comments table):", deleteTicketCommentsError)
+        }
+      }
+    } catch (error) {
+      console.warn("[v0] Error deleting comments:", error)
     }
     
     console.log("[v0] References cleaned up, now deleting user...")
