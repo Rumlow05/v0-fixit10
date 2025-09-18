@@ -326,9 +326,16 @@ export const userServiceClient = {
   },
 
   async createUser(userData: CreateUserData): Promise<User> {
-    const existingUser = await this.getUserByEmail(userData.email)
-    if (existingUser) {
-      throw new Error("Ya existe un usuario con este email")
+    console.log("[v0] Client-side: Attempting to create user with data:", userData)
+    
+    try {
+      const existingUser = await this.getUserByEmail(userData.email)
+      if (existingUser) {
+        console.log("[v0] Client-side: User already exists:", existingUser)
+        throw new Error("Ya existe un usuario con este email")
+      }
+    } catch (error) {
+      console.warn("[v0] Client-side: Warning checking existing user:", error)
     }
 
     const supabase = createBrowserClient()
@@ -340,12 +347,22 @@ export const userServiceClient = {
       role: getRoleDbValue(userData.role),
     }
 
+    console.log("[v0] Client-side: Inserting user data:", dbUserData)
+
     const { data, error } = await supabase.from("users").insert([dbUserData]).select().single()
 
     if (error) {
-      console.error("[v0] Error creating user:", error)
-      throw new Error("Error al crear usuario")
+      console.error("[v0] Client-side: Error creating user:", error)
+      console.error("[v0] Client-side: Error details:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+      throw new Error(`Error al crear usuario: ${error.message}`)
     }
+
+    console.log("[v0] Client-side: User created successfully:", data)
 
     return {
       ...data,
