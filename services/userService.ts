@@ -303,6 +303,27 @@ export const userServiceClient = {
 
     console.log("[v0] Attempting to delete user with ID:", id)
     
+    // Primero verificar si el usuario existe
+    const { data: existingUser, error: fetchError } = await supabase
+      .from("users")
+      .select("id, email, name")
+      .eq("id", id)
+      .single()
+    
+    console.log("[v0] User exists check - data:", existingUser, "error:", fetchError)
+    
+    if (fetchError && fetchError.code === 'PGRST116') {
+      console.warn("[v0] User not found with ID:", id)
+      // No lanzar error, simplemente confirmar que no existe
+      return
+    }
+    
+    if (fetchError) {
+      console.error("[v0] Error checking user existence:", fetchError)
+      throw new Error("Error al verificar usuario")
+    }
+    
+    // Ahora eliminar el usuario
     const { data, error } = await supabase.from("users").delete().eq("id", id).select()
     
     console.log("[v0] Delete result - data:", data, "error:", error)
@@ -312,11 +333,6 @@ export const userServiceClient = {
       throw new Error("Error al eliminar usuario")
     }
     
-    if (data && data.length === 0) {
-      console.warn("[v0] No user found with ID:", id)
-      throw new Error("Usuario no encontrado")
-    }
-    
-    console.log("[v0] User deleted successfully from Supabase")
+    console.log("[v0] User deleted successfully from Supabase:", data)
   },
 }

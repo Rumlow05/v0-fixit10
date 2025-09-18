@@ -2934,6 +2934,8 @@ const App: React.FC = () => {
     if (window.confirm("¿Estás seguro de que quieres eliminar a este usuario?")) {
       try {
         console.log("[v0] Starting user deletion for ID:", userId)
+        console.log("[v0] Available user IDs in state:", users.map(u => ({ id: u.id, email: u.email, name: u.name })))
+        
         await userServiceClient.deleteUser(userId)
         console.log("[v0] User deleted successfully from database")
         setUsers(users.filter((u) => u.id !== userId))
