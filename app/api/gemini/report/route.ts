@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const userMap = new Map(users.map((u: any) => [u.id, u.name]))
     const ticketsForPrompt = tickets.map((t: any) => ({
       ...t,
-      requesterName: userMap.get(t.requesterId) || "Desconocido",
+      requesterName: userMap.get(t.requester_id) || "Desconocido",
       assigneeName: t.assigneeId ? userMap.get(t.assigneeId) || "Sin asignar" : "Sin asignar",
     }))
 

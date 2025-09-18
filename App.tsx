@@ -1257,7 +1257,7 @@ const TicketsView = ({
 
   // Filtrar tickets: usuarios ven todos sus tickets, otros roles ven solo activos
   const filteredTickets = isUserRole 
-    ? tickets.filter((t) => t && t.requesterId === currentUser.id) // Usuarios ven TODOS sus tickets
+    ? tickets.filter((t) => t && t.requester_id === currentUser.id) // Usuarios ven TODOS sus tickets
     : currentUser.role === Role.LEVEL_1
       ? tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED && t.transferred_by !== currentUser.id) // Nivel 1 no ve tickets que ha transferido
       : tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED) // Otros roles ven solo activos
@@ -1393,7 +1393,7 @@ const TicketsView = ({
                   {ticket.status}
                 </span>
               </div>
-              {!isUserRole && <p className="text-xs text-gray-500">Solicitante: {getUserName(ticket.requesterId)}</p>}
+              {!isUserRole && <p className="text-xs text-gray-500">Solicitante: {getUserName(ticket.requester_id)}</p>}
             </div>
             ) : null
           )}
@@ -1437,7 +1437,7 @@ const TicketsView = ({
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-600">Solicitante:</span>{" "}
-                    <span className="font-medium">{getUserName(selectedTicket.requesterId)}</span>
+                    <span className="font-medium">{getUserName(selectedTicket.requester_id)}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Asignado a:</span>{" "}
@@ -1757,12 +1757,12 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
       
       // Si es usuario, solo mostrar sus propios tickets
       if (isUserRole) {
-        const isOwnTicket = ticket.requesterId === currentUser.id
+        const isOwnTicket = ticket.requester_id === currentUser.id
         console.log("[v0] ResolvedTicketsView - User role - Checking ticket:", {
           id: ticket?.id,
           title: ticket?.title,
           status: ticket?.status,
-          requesterId: ticket?.requesterId,
+          requester_id: ticket?.requester_id,
           currentUserId: currentUser.id,
           isResolved: isResolved,
           isOwnTicket: isOwnTicket
@@ -3026,7 +3026,7 @@ const App: React.FC = () => {
         priority: ticketData.priority,
         category: ticketData.category,
         assigned_to: ticketData.assigned_to,
-        requesterId: currentUser.id,
+        requester_id: currentUser.id,
       }
       console.log("[v0] handleCreateTicket - Creating ticket with data:", ticketToCreate)
       const newTicket = await ticketServiceClient.createTicket(ticketToCreate)
@@ -3113,7 +3113,7 @@ const App: React.FC = () => {
             priority: selectedTicket.priority,
             status: selectedTicket.status,
             assignedTo: assignee.name,
-            createdBy: users.find(u => u.id === selectedTicket.requesterId)?.name || "Desconocido",
+            createdBy: users.find(u => u.id === selectedTicket.requester_id)?.name || "Desconocido",
             createdAt: selectedTicket.created_at,
           },
           assignee.email,
@@ -3135,7 +3135,7 @@ const App: React.FC = () => {
 
       // Send notification email
       const ticket = tickets.find((t) => t && t.id === ticketId)
-      const requester = users.find((u) => u.id === ticket?.requesterId)
+      const requester = users.find((u) => u.id === ticket?.requester_id)
       if (ticket && requester) {
         await sendEmailNotification(
           "ticket-updated",
@@ -3209,7 +3209,7 @@ const App: React.FC = () => {
             priority: selectedTicket.priority,
             status: selectedTicket.status,
             assignedTo: assignee.name,
-            createdBy: users.find(u => u.id === selectedTicket.requesterId)?.name || "Desconocido",
+            createdBy: users.find(u => u.id === selectedTicket.requester_id)?.name || "Desconocido",
             createdAt: selectedTicket.created_at,
           },
           assignee.email,
@@ -3238,7 +3238,7 @@ const App: React.FC = () => {
       setIsPriorityModalOpen(false)
 
       // Send notification email al solicitante
-      const requester = users.find((u) => u.id === selectedTicket.requesterId)
+      const requester = users.find((u) => u.id === selectedTicket.requester_id)
       if (requester) {
         await sendEmailNotification(
           "ticket-updated",
@@ -3249,7 +3249,7 @@ const App: React.FC = () => {
             priority: newPriority,
             status: selectedTicket.status,
             assignedTo: users.find(u => u.id === selectedTicket.assigned_to)?.name || "Sin Asignar",
-            createdBy: users.find(u => u.id === selectedTicket.requesterId)?.name || "Desconocido",
+            createdBy: users.find(u => u.id === selectedTicket.requester_id)?.name || "Desconocido",
             createdAt: selectedTicket.created_at,
           },
           requester.email,
@@ -3279,7 +3279,7 @@ const App: React.FC = () => {
       setIsResolutionModalOpen(false)
 
       // Send notification email al solicitante
-      const requester = users.find((u) => u.id === selectedTicket.requesterId)
+      const requester = users.find((u) => u.id === selectedTicket.requester_id)
       if (requester) {
         await sendEmailNotification(
           "ticket-updated",
@@ -3290,7 +3290,7 @@ const App: React.FC = () => {
             priority: selectedTicket.priority,
             status: Status.RESOLVED,
             assignedTo: users.find(u => u.id === selectedTicket.assigned_to)?.name || "Sin Asignar",
-            createdBy: users.find(u => u.id === selectedTicket.requesterId)?.name || "Desconocido",
+            createdBy: users.find(u => u.id === selectedTicket.requester_id)?.name || "Desconocido",
             createdAt: selectedTicket.created_at,
             resolutionMessage: resolutionMessage,
             wasResolved: wasResolved,
@@ -3316,7 +3316,7 @@ const App: React.FC = () => {
       await handleAddComment(deleteComment)
       
       // Send notification email al solicitante antes de eliminar
-      const requester = users.find((u) => u.id === selectedTicket.requesterId)
+      const requester = users.find((u) => u.id === selectedTicket.requester_id)
       if (requester) {
         await sendEmailNotification(
           "ticket-updated",
@@ -3327,7 +3327,7 @@ const App: React.FC = () => {
             priority: selectedTicket.priority,
             status: "Eliminado",
             assignedTo: users.find(u => u.id === selectedTicket.assigned_to)?.name || "Sin Asignar",
-            createdBy: users.find(u => u.id === selectedTicket.requesterId)?.name || "Desconocido",
+            createdBy: users.find(u => u.id === selectedTicket.requester_id)?.name || "Desconocido",
             createdAt: selectedTicket.created_at,
             deleteMessage: deleteMessage,
             deletedBy: currentUser?.name || "Administrador",

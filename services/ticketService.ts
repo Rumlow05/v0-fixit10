@@ -11,7 +11,7 @@ export interface CreateTicketData {
   priority: Priority
   category: string
   assigned_to?: string
-  requesterId: string
+  requester_id: string
 }
 
 export interface UpdateTicketData {
