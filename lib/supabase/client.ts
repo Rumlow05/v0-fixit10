@@ -277,6 +277,10 @@ function createMockClient(): MockSupabaseClient {
   }
 }
 
+// Singleton para evitar múltiples instancias de GoTrueClient
+let supabaseClientInstance: any = null
+let mockClientInstance: any = null
+
 // Función para crear cliente - usa Supabase real si está configurado, sino usa mock
 export function createClient() {
   // Verificar si las variables de entorno de Supabase están configuradas
@@ -284,11 +288,17 @@ export function createClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
   if (supabaseUrl && supabaseAnonKey) {
-    console.log("[v0] Using real Supabase connection")
-    return createSupabaseClient(supabaseUrl, supabaseAnonKey)
+    if (!supabaseClientInstance) {
+      console.log("[v0] Creating real Supabase connection")
+      supabaseClientInstance = createSupabaseClient(supabaseUrl, supabaseAnonKey)
+    }
+    return supabaseClientInstance
   } else {
-    console.log("[v0] Using mock Supabase client (no environment variables found)")
-    return createMockClient()
+    if (!mockClientInstance) {
+      console.log("[v0] Creating mock Supabase client (no environment variables found)")
+      mockClientInstance = createMockClient()
+    }
+    return mockClientInstance
   }
 }
 

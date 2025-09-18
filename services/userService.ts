@@ -83,8 +83,10 @@ export async function createUser(userData: CreateUserData): Promise<User> {
 
   const supabase = await createClient()
 
+  // No incluir id para nuevos usuarios - Supabase lo generará automáticamente
   const dbUserData = {
-    ...userData,
+    email: userData.email,
+    name: userData.name,
     role: getRoleDbValue(userData.role),
   }
 
@@ -219,8 +221,10 @@ export const userServiceClient = {
 
     const supabase = createBrowserClient()
 
+    // No incluir id para nuevos usuarios - Supabase lo generará automáticamente
     const dbUserData = {
-      ...userData,
+      email: userData.email,
+      name: userData.name,
       role: getRoleDbValue(userData.role),
     }
 
