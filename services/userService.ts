@@ -184,21 +184,21 @@ export async function deleteUser(id: string): Promise<void> {
   
   console.log("[v0] Server-side: Delete result - data:", deleteData, "error:", error)
 
-  if (error) {
-    console.error("[v0] Server-side: Error deleting user:", error)
+  // Si hay error O si no se devolvieron datos (RLS bloqueó la eliminación)
+  if (error || !deleteData || deleteData.length === 0) {
+    console.log("[v0] Server-side: Direct deletion failed or blocked by RLS, attempting RLS bypass...")
     
-    // Intentar con RLS bypass
-    console.log("[v0] Server-side: Attempting RLS bypass...")
+    // Usar función RPC para bypasear RLS
     const { data: deleteData2, error: error2 } = await supabase.rpc('delete_user_bypass_rls', { user_id: id })
     
     if (error2) {
       console.error("[v0] Server-side: RLS bypass failed:", error2)
-      throw new Error("Error al eliminar usuario: " + error.message)
+      throw new Error("Error al eliminar usuario: " + (error?.message || "RLS bypass failed"))
     }
     
     console.log("[v0] Server-side: User deleted with RLS bypass:", deleteData2)
   } else {
-    console.log("[v0] Server-side: User deleted successfully:", deleteData)
+    console.log("[v0] Server-side: User deleted successfully with direct method:", deleteData)
   }
   
   // Verificar que realmente se eliminó
@@ -444,21 +444,21 @@ export const userServiceClient = {
     
     console.log("[v0] Delete result - data:", deleteData, "error:", error)
 
-    if (error) {
-      console.error("[v0] Error deleting user:", error)
+    // Si hay error O si no se devolvieron datos (RLS bloqueó la eliminación)
+    if (error || !deleteData || deleteData.length === 0) {
+      console.log("[v0] Direct deletion failed or blocked by RLS, attempting RLS bypass...")
       
-      // Si hay error, intentar con RLS deshabilitado temporalmente
-      console.log("[v0] Attempting deletion with RLS bypass...")
+      // Usar función RPC para bypasear RLS
       const { data: deleteData2, error: error2 } = await supabase.rpc('delete_user_bypass_rls', { user_id: id })
       
       if (error2) {
         console.error("[v0] RLS bypass also failed:", error2)
-        throw new Error("Error al eliminar usuario: " + error.message)
+        throw new Error("Error al eliminar usuario: " + (error?.message || "RLS bypass failed"))
       }
       
       console.log("[v0] User deleted successfully with RLS bypass:", deleteData2)
     } else {
-      console.log("[v0] User deleted successfully:", deleteData)
+      console.log("[v0] User deleted successfully with direct method:", deleteData)
     }
     
     // Verificar que realmente se eliminó
