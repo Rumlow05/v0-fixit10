@@ -55,19 +55,31 @@ export async function getUserById(id: string): Promise<User | null> {
 export async function getUserByEmail(email: string): Promise<User | null> {
   const supabase = await createClient()
 
+  console.log("[v0] Searching for user with email:", email)
+
   const { data, error } = await supabase.from("users").select("*").eq("email", email).single()
 
   if (error) {
     if (error.code === "PGRST116") {
+      console.log("[v0] User not found with email:", email)
       return null // User not found
     }
     console.error("[v0] Error fetching user by email:", error)
-    throw new Error("Error al buscar usuario por email")
+    console.error("[v0] Error details:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint
+    })
+    throw new Error(`Error al buscar usuario por email: ${error.message}`)
   }
 
   if (!data) {
+    console.log("[v0] No data returned for email:", email)
     return null
   }
+
+  console.log("[v0] User found:", data)
 
   return {
     ...data,
@@ -76,9 +88,18 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function createUser(userData: CreateUserData): Promise<User> {
-  const existingUser = await getUserByEmail(userData.email)
-  if (existingUser) {
-    throw new Error("Ya existe un usuario con este email")
+  console.log("[v0] Attempting to create user with data:", userData)
+  
+  // Verificar si el usuario ya existe
+  try {
+    const existingUser = await getUserByEmail(userData.email)
+    if (existingUser) {
+      console.log("[v0] User already exists:", existingUser)
+      throw new Error("Ya existe un usuario con este email")
+    }
+  } catch (error) {
+    // Si hay error al buscar, continuar con la creación
+    console.warn("[v0] Warning checking existing user:", error)
   }
 
   const supabase = await createClient()
@@ -90,12 +111,22 @@ export async function createUser(userData: CreateUserData): Promise<User> {
     role: getRoleDbValue(userData.role),
   }
 
+  console.log("[v0] Inserting user data:", dbUserData)
+
   const { data, error } = await supabase.from("users").insert([dbUserData]).select().single()
 
   if (error) {
     console.error("[v0] Error creating user:", error)
-    throw new Error("Error al crear usuario")
+    console.error("[v0] Error details:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint
+    })
+    throw new Error(`Error al crear usuario: ${error.message}`)
   }
+
+  console.log("[v0] User created successfully:", data)
 
   return {
     ...data,
