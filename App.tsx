@@ -2445,6 +2445,113 @@ const App: React.FC = () => {
     }
   }, [currentUser, users, databaseReady])
 
+  // Sincronización periódica de datos entre dispositivos
+  useEffect(() => {
+    if (!currentUser || !databaseReady) return
+
+    const syncInterval = setInterval(async () => {
+      try {
+        console.log("[v0] Syncing data across devices...")
+        
+        // Verificar eventos de eliminación de usuarios
+        if (typeof window !== 'undefined') {
+          const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
+          const recentEvents = events.filter((event: any) => {
+            const eventTime = new Date(event.timestamp)
+            const now = new Date()
+            const minutesDiff = (now.getTime() - eventTime.getTime()) / (1000 * 60)
+            return minutesDiff < 5 // Solo eventos de los últimos 5 minutos
+          })
+          
+          // Verificar si hay eventos de eliminación que afecten al usuario actual
+          const userDeletedEvent = recentEvents.find((event: any) => 
+            event.type === 'USER_DELETED' && 
+            (event.userId === currentUser.id || event.userEmail === currentUser.email)
+          )
+          
+          if (userDeletedEvent) {
+            console.log("[v0] User deletion event detected, logging out...")
+            alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
+            setCurrentUser(null)
+            localStorage.removeItem("fixit_currentUser")
+            return
+          }
+        }
+        
+        // Recargar usuarios para detectar cambios
+        const freshUsers = await userServiceClient.getAllUsers()
+        
+        // Verificar si el usuario actual sigue existiendo
+        const currentUserExists = freshUsers.find(u => u.id === currentUser.id && u.email === currentUser.email)
+        
+        if (!currentUserExists) {
+          console.log("[v0] Current user no longer exists during sync, logging out...")
+          alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
+          setCurrentUser(null)
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem("fixit_currentUser")
+          }
+          return
+        }
+        
+        // Actualizar la lista de usuarios si hay cambios
+        if (freshUsers.length !== users.length) {
+          console.log("[v0] User list changed, updating...")
+          setUsers(freshUsers)
+        }
+        
+        // Recargar tickets para detectar cambios
+        const freshTickets = await ticketServiceClient.getAllTickets()
+        if (freshTickets.length !== tickets.length) {
+          console.log("[v0] Ticket list changed, updating...")
+          setTickets(freshTickets)
+        }
+        
+      } catch (error) {
+        console.error("[v0] Error during sync:", error)
+      }
+    }, 5000) // Sincronizar cada 5 segundos para mayor responsividad
+
+    return () => clearInterval(syncInterval)
+  }, [currentUser, databaseReady, users.length, tickets.length])
+
+  // Escuchar cambios en localStorage para eventos de otros dispositivos
+  useEffect(() => {
+    if (!currentUser || typeof window === 'undefined') return
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'fixit_events' && e.newValue) {
+        try {
+          const events = JSON.parse(e.newValue)
+          const recentEvents = events.filter((event: any) => {
+            const eventTime = new Date(event.timestamp)
+            const now = new Date()
+            const minutesDiff = (now.getTime() - eventTime.getTime()) / (1000 * 60)
+            return minutesDiff < 5 // Solo eventos de los últimos 5 minutos
+          })
+          
+          // Verificar si hay eventos de eliminación que afecten al usuario actual
+          const userDeletedEvent = recentEvents.find((event: any) => 
+            event.type === 'USER_DELETED' && 
+            (event.userId === currentUser.id || event.userEmail === currentUser.email)
+          )
+          
+          if (userDeletedEvent) {
+            console.log("[v0] User deletion event detected via storage change, logging out...")
+            alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
+            setCurrentUser(null)
+            localStorage.removeItem("fixit_currentUser")
+          }
+        } catch (error) {
+          console.error("[v0] Error processing storage event:", error)
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [currentUser])
+
   // --- Event Handlers ---
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
@@ -2453,6 +2560,18 @@ const App: React.FC = () => {
       setLoginError("")
       return
     }
+    
+    // Verificar si el usuario fue eliminado recientemente
+    if (typeof window !== 'undefined') {
+      const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
+      const isDeleted = deletedUsers.find((du: any) => du.email === loginEmail)
+      
+      if (isDeleted) {
+        setLoginError("Este usuario ha sido eliminado del sistema.")
+        return
+      }
+    }
+    
     const user = users.find((u) => u.email === loginEmail)
     if (user) {
       setCurrentUser(user)
@@ -2772,11 +2891,25 @@ const App: React.FC = () => {
         setUsers(users.filter((u) => u.id !== userId))
         console.log("[v0] User removed from local state")
         
-        // Invalidar sesiones del usuario eliminado en otros dispositivos
+        // Crear evento de eliminación para sincronizar con otros dispositivos
         if (typeof window !== 'undefined') {
           const deletedUser = users.find(u => u.id === userId)
           if (deletedUser) {
-            // Marcar en localStorage que este usuario fue eliminado
+            // Crear evento de eliminación
+            const deleteEvent = {
+              type: 'USER_DELETED',
+              userId: userId,
+              userEmail: deletedUser.email,
+              timestamp: new Date().toISOString(),
+              deletedBy: currentUser.email
+            }
+            
+            // Guardar evento en localStorage
+            const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
+            events.push(deleteEvent)
+            localStorage.setItem('fixit_events', JSON.stringify(events))
+            
+            // También marcar en la lista de usuarios eliminados
             const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
             deletedUsers.push({
               id: userId,
@@ -2784,11 +2917,12 @@ const App: React.FC = () => {
               deletedAt: new Date().toISOString()
             })
             localStorage.setItem('fixit_deletedUsers', JSON.stringify(deletedUsers))
-            console.log("[v0] User marked as deleted for session invalidation")
+            
+            console.log("[v0] User deletion event created for cross-device sync")
           }
         }
         
-        alert("Usuario eliminado exitosamente. Las sesiones activas de este usuario serán invalidadas.")
+        alert("Usuario eliminado exitosamente. Las sesiones activas de este usuario serán invalidadas en todos los dispositivos.")
       } catch (error) {
         console.error("[v0] Error deleting user:", error)
         alert("Error al eliminar usuario. Por favor intenta de nuevo.")
