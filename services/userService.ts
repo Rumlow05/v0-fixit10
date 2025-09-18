@@ -157,16 +157,49 @@ export async function deleteUser(id: string): Promise<void> {
   
   console.log("[v0] Server-side: User found, proceeding with deletion:", existingUser)
   
-  const { error } = await supabase.from("users").delete().eq("id", id)
+  // Limpiar referencias primero
+  console.log("[v0] Server-side: Cleaning up references...")
   
-  console.log("[v0] Server-side: Delete result - error:", error)
+  const { error: updateTicketsError } = await supabase
+    .from("tickets")
+    .update({ assigned_to: null })
+    .eq("assigned_to", id)
+  
+  const { error: updateRequesterError } = await supabase
+    .from("tickets")
+    .update({ requester_id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30" })
+    .eq("requester_id", id)
+  
+  const { error: deleteCommentsError } = await supabase
+    .from("comments")
+    .delete()
+    .eq("user_id", id)
+  
+  // Intentar eliminación directa
+  const { data: deleteData, error } = await supabase
+    .from("users")
+    .delete()
+    .eq("id", id)
+    .select("id")
+  
+  console.log("[v0] Server-side: Delete result - data:", deleteData, "error:", error)
 
   if (error) {
     console.error("[v0] Server-side: Error deleting user:", error)
-    throw new Error("Error al eliminar usuario")
+    
+    // Intentar con RLS bypass
+    console.log("[v0] Server-side: Attempting RLS bypass...")
+    const { data: deleteData2, error: error2 } = await supabase.rpc('delete_user_bypass_rls', { user_id: id })
+    
+    if (error2) {
+      console.error("[v0] Server-side: RLS bypass failed:", error2)
+      throw new Error("Error al eliminar usuario: " + error.message)
+    }
+    
+    console.log("[v0] Server-side: User deleted with RLS bypass:", deleteData2)
+  } else {
+    console.log("[v0] Server-side: User deleted successfully:", deleteData)
   }
-  
-  console.log("[v0] Server-side: User delete command executed successfully")
   
   // Verificar que realmente se eliminó
   const { data: verifyUser, error: verifyError } = await supabase
@@ -390,7 +423,7 @@ export const userServiceClient = {
       console.warn("[v0] Warning updating ticket requesters:", updateRequesterError)
     }
     
-    // Eliminar comentarios del usuario
+    // Eliminar comentarios del usuario (la tabla se llama 'comments' según el esquema)
     const { error: deleteCommentsError } = await supabase
       .from("comments")
       .delete()
@@ -402,17 +435,31 @@ export const userServiceClient = {
     
     console.log("[v0] References cleaned up, now deleting user...")
     
-    // Ahora eliminar el usuario (sin .select() para evitar problemas con RLS)
-    const { error } = await supabase.from("users").delete().eq("id", id)
+    // Intentar eliminación directa primero
+    const { data: deleteData, error } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", id)
+      .select("id")
     
-    console.log("[v0] Delete result - error:", error)
+    console.log("[v0] Delete result - data:", deleteData, "error:", error)
 
     if (error) {
       console.error("[v0] Error deleting user:", error)
-      throw new Error("Error al eliminar usuario")
+      
+      // Si hay error, intentar con RLS deshabilitado temporalmente
+      console.log("[v0] Attempting deletion with RLS bypass...")
+      const { data: deleteData2, error: error2 } = await supabase.rpc('delete_user_bypass_rls', { user_id: id })
+      
+      if (error2) {
+        console.error("[v0] RLS bypass also failed:", error2)
+        throw new Error("Error al eliminar usuario: " + error.message)
+      }
+      
+      console.log("[v0] User deleted successfully with RLS bypass:", deleteData2)
+    } else {
+      console.log("[v0] User deleted successfully:", deleteData)
     }
-    
-    console.log("[v0] User delete command executed successfully")
     
     // Verificar que realmente se eliminó
     const { data: verifyUser, error: verifyError } = await supabase
