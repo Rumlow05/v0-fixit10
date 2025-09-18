@@ -2327,6 +2327,7 @@ const App: React.FC = () => {
   const [whatsappQR, setWhatsappQR] = useState<string | null>(null)
   const [whatsappStatus, setWhatsappStatus] = useState<{isConnected: boolean, needsQR: boolean}>({isConnected: false, needsQR: false})
   const [isSyncing, setIsSyncing] = useState(false)
+  const [locallyDeletedUsers, setLocallyDeletedUsers] = useState<Set<string>>(new Set())
 
   // Limpiar entradas antiguas de usuarios eliminados y asegurar consistencia
   useEffect(() => {
@@ -2366,6 +2367,21 @@ const App: React.FC = () => {
         console.log("[v0] Base user not found in localStorage, will be loaded from default data")
       }
     }
+  }, [])
+
+  // Limpiar usuarios eliminados localmente después de 1 hora
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      setLocallyDeletedUsers(prev => {
+        if (prev.size > 0) {
+          console.log("[v0] Cleaning up locally deleted users list (1 hour timeout)")
+          return new Set() // Limpiar la lista después de 1 hora
+        }
+        return prev
+      })
+    }, 60 * 60 * 1000) // 1 hora
+
+    return () => clearInterval(cleanupInterval)
   }, [])
 
   // --- Effects for Data Persistence ---
@@ -2494,6 +2510,15 @@ const App: React.FC = () => {
         console.log("[v0] Current users in state:", users.length, "users")
         console.log("[v0] Current users details:", users.map(u => ({ id: u.id, email: u.email, name: u.name })))
         
+        // Comparar usuarios específicos
+        const freshUserIds = freshUsers.map(u => u.id)
+        const currentUserIds = users.map(u => u.id)
+        const usersInFreshButNotInCurrent = freshUsers.filter(fu => !currentUserIds.includes(fu.id))
+        const usersInCurrentButNotInFresh = users.filter(u => !freshUserIds.includes(u.id))
+        
+        console.log("[v0] Users in Supabase but NOT in local state:", usersInFreshButNotInCurrent.map(u => ({ id: u.id, email: u.email, name: u.name })))
+        console.log("[v0] Users in local state but NOT in Supabase:", usersInCurrentButNotInFresh.map(u => ({ id: u.id, email: u.email, name: u.name })))
+        
         // Verificar si el usuario actual sigue existiendo
         const currentUserExists = freshUsers.find(u => u.id === currentUser.id && u.email === currentUser.email)
         
@@ -2511,11 +2536,20 @@ const App: React.FC = () => {
         const usersChanged = JSON.stringify(freshUsers) !== JSON.stringify(users)
         if (usersChanged) {
           console.log("[v0] User data changed, updating...")
-          console.log("[v0] Users that were added/restored:", 
-            freshUsers.filter(fu => !users.find(u => u.id === fu.id))
-              .map(u => ({ id: u.id, email: u.email, name: u.name }))
+          
+          // Filtrar usuarios que fueron eliminados localmente
+          const filteredFreshUsers = freshUsers.filter(fu => !locallyDeletedUsers.has(fu.id))
+          const usersToRestore = freshUsers.filter(fu => !users.find(u => u.id === fu.id) && !locallyDeletedUsers.has(fu.id))
+          
+          console.log("[v0] Users that would be restored (excluding locally deleted):", 
+            usersToRestore.map(u => ({ id: u.id, email: u.email, name: u.name }))
           )
-          setUsers(freshUsers)
+          console.log("[v0] Locally deleted users (preventing restoration):", Array.from(locallyDeletedUsers))
+          
+          // Solo actualizar si hay cambios reales (no solo usuarios eliminados localmente)
+          if (JSON.stringify(filteredFreshUsers) !== JSON.stringify(users)) {
+            setUsers(filteredFreshUsers)
+          }
         }
         
         // Verificar cambios en tickets
@@ -2902,6 +2936,13 @@ const App: React.FC = () => {
         const createEvent = createUserEvent('USER_CREATED', user)
         await syncService.sendSyncEvent(createEvent)
         console.log("[v0] User creation event created")
+        
+        // Si se creó un usuario con un ID que estaba marcado como eliminado localmente, removerlo de la lista
+        setLocallyDeletedUsers(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(user.id)
+          return newSet
+        })
       }
 
       closeUserModal()
@@ -2938,8 +2979,11 @@ const App: React.FC = () => {
         
         await userServiceClient.deleteUser(userId)
         console.log("[v0] User deleted successfully from database")
+        
+        // Marcar como eliminado localmente para prevenir restauración
+        setLocallyDeletedUsers(prev => new Set([...prev, userId]))
         setUsers(users.filter((u) => u.id !== userId))
-        console.log("[v0] User removed from local state")
+        console.log("[v0] User removed from local state and marked as locally deleted")
         
         // Crear evento de eliminación usando SyncService
         const deletedUser = users.find(u => u.id === userId)
