@@ -367,6 +367,41 @@ export const userServiceClient = {
     
     console.log("[v0] User found, proceeding with deletion:", existingUser)
     
+    // Primero, limpiar referencias en tickets y comentarios
+    console.log("[v0] Cleaning up ticket references...")
+    
+    // Actualizar tickets asignados al usuario (poner como sin asignar)
+    const { error: updateTicketsError } = await supabase
+      .from("tickets")
+      .update({ assigned_to: null })
+      .eq("assigned_to", id)
+    
+    if (updateTicketsError) {
+      console.warn("[v0] Warning updating tickets:", updateTicketsError)
+    }
+    
+    // Actualizar tickets creados por el usuario (asignar al admin)
+    const { error: updateRequesterError } = await supabase
+      .from("tickets")
+      .update({ requester_id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30" })
+      .eq("requester_id", id)
+    
+    if (updateRequesterError) {
+      console.warn("[v0] Warning updating ticket requesters:", updateRequesterError)
+    }
+    
+    // Eliminar comentarios del usuario
+    const { error: deleteCommentsError } = await supabase
+      .from("comments")
+      .delete()
+      .eq("user_id", id)
+    
+    if (deleteCommentsError) {
+      console.warn("[v0] Warning deleting comments:", deleteCommentsError)
+    }
+    
+    console.log("[v0] References cleaned up, now deleting user...")
+    
     // Ahora eliminar el usuario (sin .select() para evitar problemas con RLS)
     const { error } = await supabase.from("users").delete().eq("id", id)
     
