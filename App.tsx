@@ -7,6 +7,7 @@ import { suggestSolution, generateAdminReport } from "./services/geminiService"
 
 import { userServiceClient } from "./services/userService"
 import { ticketServiceClient } from "./services/ticketService"
+import { syncService, createUserEvent, createTicketEvent } from "./services/syncService"
 
 // --- SVG Icons ---
 const IconTickets = () => (
@@ -2474,42 +2475,19 @@ const App: React.FC = () => {
     }
   }, [currentUser, users, databaseReady])
 
-  // Sincronización periódica de datos entre dispositivos
+  // Sincronización mejorada usando SyncService
   useEffect(() => {
     if (!currentUser || !databaseReady) return
 
-    const syncInterval = setInterval(async () => {
+    // Función de sincronización
+    const performSync = async () => {
       try {
         setIsSyncing(true)
         console.log("[v0] Syncing data across devices...")
         
-        // Verificar eventos de eliminación de usuarios
-        if (typeof window !== 'undefined') {
-          const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
-          const recentEvents = events.filter((event: any) => {
-            const eventTime = new Date(event.timestamp)
-            const now = new Date()
-            const minutesDiff = (now.getTime() - eventTime.getTime()) / (1000 * 60)
-            return minutesDiff < 5 // Solo eventos de los últimos 5 minutos
-          })
-          
-          // Verificar si hay eventos de eliminación que afecten al usuario actual
-          const userDeletedEvent = recentEvents.find((event: any) => 
-            event.type === 'USER_DELETED' && 
-            (event.userId === currentUser.id || event.userEmail === currentUser.email)
-          )
-          
-          if (userDeletedEvent) {
-            console.log("[v0] User deletion event detected, logging out...")
-            alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
-            setCurrentUser(null)
-            localStorage.removeItem("fixit_currentUser")
-            return
-          }
-        }
-        
-        // Recargar usuarios para detectar cambios
+        // Recargar datos frescos
         const freshUsers = await userServiceClient.getAllUsers()
+        const freshTickets = await ticketServiceClient.getAllTickets()
         
         // Verificar si el usuario actual sigue existiendo
         const currentUserExists = freshUsers.find(u => u.id === currentUser.id && u.email === currentUser.email)
@@ -2531,8 +2509,7 @@ const App: React.FC = () => {
           setUsers(freshUsers)
         }
         
-        // Recargar tickets para detectar cambios
-        const freshTickets = await ticketServiceClient.getAllTickets()
+        // Verificar cambios en tickets
         const ticketsChanged = JSON.stringify(freshTickets) !== JSON.stringify(tickets)
         if (ticketsChanged) {
           console.log("[v0] Ticket data changed, updating...")
@@ -2544,68 +2521,58 @@ const App: React.FC = () => {
       } finally {
         setIsSyncing(false)
       }
-    }, 5000) // Sincronizar cada 5 segundos para mayor responsividad
+    }
 
-    return () => clearInterval(syncInterval)
+    // Iniciar sincronización automática
+    syncService.startAutoSync(performSync, 3000) // Cada 3 segundos
+
+    return () => {
+      syncService.stopAutoSync()
+    }
   }, [currentUser, databaseReady, users.length, tickets.length])
 
-  // Escuchar cambios en localStorage para eventos de otros dispositivos
+  // Escuchar eventos de sincronización usando SyncService
   useEffect(() => {
-    if (!currentUser || typeof window === 'undefined') return
+    if (!currentUser) return
 
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'fixit_events' && e.newValue) {
-        try {
-          const events = JSON.parse(e.newValue)
-          const recentEvents = events.filter((event: any) => {
-            const eventTime = new Date(event.timestamp)
-            const now = new Date()
-            const minutesDiff = (now.getTime() - eventTime.getTime()) / (1000 * 60)
-            return minutesDiff < 5 // Solo eventos de los últimos 5 minutos
-          })
-          
-          // Verificar si hay eventos de eliminación que afecten al usuario actual
-          const userDeletedEvent = recentEvents.find((event: any) => 
-            event.type === 'USER_DELETED' && 
-            (event.userId === currentUser.id || event.userEmail === currentUser.email)
-          )
-          
-          if (userDeletedEvent) {
-            console.log("[v0] User deletion event detected via storage change, logging out...")
-            alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
-            setCurrentUser(null)
-            localStorage.removeItem("fixit_currentUser")
-            return
-          }
-          
-          // Verificar si hay eventos de cambios en datos que requieren recarga
-          const dataChangeEvents = recentEvents.filter((event: any) => 
-            ['USER_CREATED', 'USER_UPDATED', 'TICKET_CREATED', 'TICKET_UPDATED'].includes(event.type)
-          )
-          
-          if (dataChangeEvents.length > 0) {
-            console.log("[v0] Data change events detected, triggering sync...")
-            // Forzar recarga de datos
-            setTimeout(async () => {
-              try {
-                const freshUsers = await userServiceClient.getAllUsers()
-                const freshTickets = await ticketServiceClient.getAllTickets()
-                setUsers(freshUsers)
-                setTickets(freshTickets)
-                console.log("[v0] Data synced after event detection")
-              } catch (error) {
-                console.error("[v0] Error syncing data after event:", error)
-              }
-            }, 1000)
-          }
-        } catch (error) {
-          console.error("[v0] Error processing storage event:", error)
+    const handleSyncEvent = async (event: any) => {
+      console.log("[v0] Sync event received:", event.type)
+      
+      // Verificar si es un evento de eliminación de usuario
+      if (event.type === 'USER_DELETED' && 
+          (event.data.id === currentUser.id || event.data.email === currentUser.email)) {
+        console.log("[v0] User deletion event detected, logging out...")
+        alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
+        setCurrentUser(null)
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem("fixit_currentUser")
         }
+        return
+      }
+      
+      // Para otros eventos, forzar sincronización
+      if (['USER_CREATED', 'USER_UPDATED', 'TICKET_CREATED', 'TICKET_UPDATED', 'TICKET_DELETED'].includes(event.type)) {
+        console.log("[v0] Data change event detected, triggering sync...")
+        setTimeout(async () => {
+          try {
+            const freshUsers = await userServiceClient.getAllUsers()
+            const freshTickets = await ticketServiceClient.getAllTickets()
+            setUsers(freshUsers)
+            setTickets(freshTickets)
+            console.log("[v0] Data synced after event detection")
+          } catch (error) {
+            console.error("[v0] Error syncing data after event:", error)
+          }
+        }, 1000)
       }
     }
 
-    window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
+    // Suscribirse a eventos de sincronización
+    const unsubscribe = syncService.onSyncEvent(handleSyncEvent)
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [currentUser])
 
   // --- Event Handlers ---
@@ -2912,42 +2879,20 @@ const App: React.FC = () => {
         setUsers(users.map((u) => (u.id === user.id ? user : u)))
         console.log("[v0] User updated successfully:", user)
         
-        // Crear evento de actualización de usuario
-        if (typeof window !== 'undefined') {
-          const updateEvent = {
-            type: 'USER_UPDATED',
-            userId: user.id,
-            userEmail: user.email,
-            timestamp: new Date().toISOString(),
-            updatedBy: currentUser?.email
-          }
-          
-          const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
-          events.push(updateEvent)
-          localStorage.setItem('fixit_events', JSON.stringify(events))
-          console.log("[v0] User update event created")
-        }
+        // Crear evento de actualización de usuario usando SyncService
+        const updateEvent = createUserEvent('USER_UPDATED', user)
+        await syncService.sendSyncEvent(updateEvent)
+        console.log("[v0] User update event created")
       } else {
         console.log("[v0] Creating new user")
         user = await userServiceClient.createUser(userData)
         setUsers([user, ...users])
         console.log("[v0] User created successfully:", user)
         
-        // Crear evento de creación de usuario
-        if (typeof window !== 'undefined') {
-          const createEvent = {
-            type: 'USER_CREATED',
-            userId: user.id,
-            userEmail: user.email,
-            timestamp: new Date().toISOString(),
-            createdBy: currentUser?.email
-          }
-          
-          const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
-          events.push(createEvent)
-          localStorage.setItem('fixit_events', JSON.stringify(events))
-          console.log("[v0] User creation event created")
-        }
+        // Crear evento de creación de usuario usando SyncService
+        const createEvent = createUserEvent('USER_CREATED', user)
+        await syncService.sendSyncEvent(createEvent)
+        console.log("[v0] User creation event created")
       }
 
       closeUserModal()
@@ -2985,25 +2930,17 @@ const App: React.FC = () => {
         setUsers(users.filter((u) => u.id !== userId))
         console.log("[v0] User removed from local state")
         
-        // Crear evento de eliminación para sincronizar con otros dispositivos
-        if (typeof window !== 'undefined') {
-          const deletedUser = users.find(u => u.id === userId)
-          if (deletedUser) {
-            // Crear evento de eliminación
-            const deleteEvent = {
-              type: 'USER_DELETED',
-              userId: userId,
-              userEmail: deletedUser.email,
-              timestamp: new Date().toISOString(),
-              deletedBy: currentUser.email
-            }
-            
-            // Guardar evento en localStorage
-            const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
-            events.push(deleteEvent)
-            localStorage.setItem('fixit_events', JSON.stringify(events))
-            
-            // También marcar en la lista de usuarios eliminados
+        // Crear evento de eliminación usando SyncService
+        const deletedUser = users.find(u => u.id === userId)
+        if (deletedUser) {
+          const deleteEvent = createUserEvent('USER_DELETED', {
+            ...deletedUser,
+            deletedBy: currentUser.email
+          })
+          await syncService.sendSyncEvent(deleteEvent)
+          
+          // También marcar en la lista de usuarios eliminados para validación local
+          if (typeof window !== 'undefined') {
             const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
             deletedUsers.push({
               id: userId,
@@ -3011,9 +2948,9 @@ const App: React.FC = () => {
               deletedAt: new Date().toISOString()
             })
             localStorage.setItem('fixit_deletedUsers', JSON.stringify(deletedUsers))
-            
-            console.log("[v0] User deletion event created for cross-device sync")
           }
+          
+          console.log("[v0] User deletion event created for cross-device sync")
         }
         
         alert("Usuario eliminado exitosamente. Las sesiones activas de este usuario serán invalidadas en todos los dispositivos.")
@@ -3043,21 +2980,10 @@ const App: React.FC = () => {
       setTickets([newTicket, ...tickets])
       closeCreateTicketModal() // Use the proper function name
 
-      // Crear evento de creación de ticket
-      if (typeof window !== 'undefined') {
-        const createEvent = {
-          type: 'TICKET_CREATED',
-          ticketId: newTicket.id,
-          ticketTitle: newTicket.title,
-          timestamp: new Date().toISOString(),
-          createdBy: currentUser.email
-        }
-        
-        const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
-        events.push(createEvent)
-        localStorage.setItem('fixit_events', JSON.stringify(events))
-        console.log("[v0] Ticket creation event created")
-      }
+      // Crear evento de creación de ticket usando SyncService
+      const createEvent = createTicketEvent('TICKET_CREATED', newTicket)
+      await syncService.sendSyncEvent(createEvent)
+      console.log("[v0] Ticket creation event created")
 
       // Send notification email (existing functionality)
       await sendEmailNotification("ticket-created", {
