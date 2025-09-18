@@ -389,6 +389,12 @@ const Sidebar = ({ currentUser, currentView, setCurrentView, onLogout, setCreate
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">FixIT</h1>
+          {isSyncing && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="w-3 h-3 border-2 border-gray-300 border-t-emerald-600 rounded-full animate-spin"></div>
+              <span>Sincronizando...</span>
+            </div>
+          )}
         </div>
       </div>
       <nav className="flex-grow p-4">
@@ -2319,6 +2325,7 @@ const App: React.FC = () => {
   const [isWhatsAppAdminOpen, setIsWhatsAppAdminOpen] = useState(false)
   const [whatsappQR, setWhatsappQR] = useState<string | null>(null)
   const [whatsappStatus, setWhatsappStatus] = useState<{isConnected: boolean, needsQR: boolean}>({isConnected: false, needsQR: false})
+  const [isSyncing, setIsSyncing] = useState(false)
 
   // Limpiar entradas antiguas de usuarios eliminados
   useEffect(() => {
@@ -2451,6 +2458,7 @@ const App: React.FC = () => {
 
     const syncInterval = setInterval(async () => {
       try {
+        setIsSyncing(true)
         console.log("[v0] Syncing data across devices...")
         
         // Verificar eventos de eliminación de usuarios
@@ -2494,21 +2502,25 @@ const App: React.FC = () => {
           return
         }
         
-        // Actualizar la lista de usuarios si hay cambios
-        if (freshUsers.length !== users.length) {
-          console.log("[v0] User list changed, updating...")
+        // Verificar cambios en usuarios (no solo cantidad, sino contenido)
+        const usersChanged = JSON.stringify(freshUsers) !== JSON.stringify(users)
+        if (usersChanged) {
+          console.log("[v0] User data changed, updating...")
           setUsers(freshUsers)
         }
         
         // Recargar tickets para detectar cambios
         const freshTickets = await ticketServiceClient.getAllTickets()
-        if (freshTickets.length !== tickets.length) {
-          console.log("[v0] Ticket list changed, updating...")
+        const ticketsChanged = JSON.stringify(freshTickets) !== JSON.stringify(tickets)
+        if (ticketsChanged) {
+          console.log("[v0] Ticket data changed, updating...")
           setTickets(freshTickets)
         }
         
       } catch (error) {
         console.error("[v0] Error during sync:", error)
+      } finally {
+        setIsSyncing(false)
       }
     }, 5000) // Sincronizar cada 5 segundos para mayor responsividad
 
@@ -2541,6 +2553,28 @@ const App: React.FC = () => {
             alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
             setCurrentUser(null)
             localStorage.removeItem("fixit_currentUser")
+            return
+          }
+          
+          // Verificar si hay eventos de cambios en datos que requieren recarga
+          const dataChangeEvents = recentEvents.filter((event: any) => 
+            ['USER_CREATED', 'USER_UPDATED', 'TICKET_CREATED', 'TICKET_UPDATED'].includes(event.type)
+          )
+          
+          if (dataChangeEvents.length > 0) {
+            console.log("[v0] Data change events detected, triggering sync...")
+            // Forzar recarga de datos
+            setTimeout(async () => {
+              try {
+                const freshUsers = await userServiceClient.getAllUsers()
+                const freshTickets = await ticketServiceClient.getAllTickets()
+                setUsers(freshUsers)
+                setTickets(freshTickets)
+                console.log("[v0] Data synced after event detection")
+              } catch (error) {
+                console.error("[v0] Error syncing data after event:", error)
+              }
+            }, 1000)
           }
         } catch (error) {
           console.error("[v0] Error processing storage event:", error)
@@ -2849,11 +2883,43 @@ const App: React.FC = () => {
         user = await userServiceClient.updateUser(editingUser.id, userData)
         setUsers(users.map((u) => (u.id === user.id ? user : u)))
         console.log("[v0] User updated successfully:", user)
+        
+        // Crear evento de actualización de usuario
+        if (typeof window !== 'undefined') {
+          const updateEvent = {
+            type: 'USER_UPDATED',
+            userId: user.id,
+            userEmail: user.email,
+            timestamp: new Date().toISOString(),
+            updatedBy: currentUser?.email
+          }
+          
+          const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
+          events.push(updateEvent)
+          localStorage.setItem('fixit_events', JSON.stringify(events))
+          console.log("[v0] User update event created")
+        }
       } else {
         console.log("[v0] Creating new user")
         user = await userServiceClient.createUser(userData)
         setUsers([user, ...users])
         console.log("[v0] User created successfully:", user)
+        
+        // Crear evento de creación de usuario
+        if (typeof window !== 'undefined') {
+          const createEvent = {
+            type: 'USER_CREATED',
+            userId: user.id,
+            userEmail: user.email,
+            timestamp: new Date().toISOString(),
+            createdBy: currentUser?.email
+          }
+          
+          const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
+          events.push(createEvent)
+          localStorage.setItem('fixit_events', JSON.stringify(events))
+          console.log("[v0] User creation event created")
+        }
       }
 
       closeUserModal()
@@ -2948,6 +3014,22 @@ const App: React.FC = () => {
 
       setTickets([newTicket, ...tickets])
       closeCreateTicketModal() // Use the proper function name
+
+      // Crear evento de creación de ticket
+      if (typeof window !== 'undefined') {
+        const createEvent = {
+          type: 'TICKET_CREATED',
+          ticketId: newTicket.id,
+          ticketTitle: newTicket.title,
+          timestamp: new Date().toISOString(),
+          createdBy: currentUser.email
+        }
+        
+        const events = JSON.parse(localStorage.getItem('fixit_events') || '[]')
+        events.push(createEvent)
+        localStorage.setItem('fixit_events', JSON.stringify(events))
+        console.log("[v0] Ticket creation event created")
+      }
 
       // Send notification email (existing functionality)
       await sendEmailNotification("ticket-created", {
