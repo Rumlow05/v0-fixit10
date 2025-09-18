@@ -166,7 +166,7 @@ const mockTickets = [
   },
 ]
 
-export function createClient(): MockSupabaseClient {
+function createMockClient(): MockSupabaseClient {
   return {
     from: (table: string) => ({
       select: (columns: string) => ({
