@@ -131,6 +131,32 @@ export async function deleteUser(id: string): Promise<void> {
 
   console.log("[v0] Server-side: Attempting to delete user with ID:", id)
   
+  // Primero verificar si el usuario existe
+  const { data: existingUser, error: fetchError } = await supabase
+    .from("users")
+    .select("id, email, name")
+    .eq("id", id)
+    .single()
+  
+  console.log("[v0] Server-side: User exists check - data:", existingUser, "error:", fetchError)
+  
+  if (fetchError && fetchError.code === 'PGRST116') {
+    console.warn("[v0] Server-side: User not found with ID:", id)
+    return
+  }
+  
+  if (fetchError) {
+    console.error("[v0] Server-side: Error checking user existence:", fetchError)
+    throw new Error("Error al verificar usuario")
+  }
+  
+  if (!existingUser) {
+    console.warn("[v0] Server-side: User not found with ID:", id)
+    return
+  }
+  
+  console.log("[v0] Server-side: User found, proceeding with deletion:", existingUser)
+  
   const { data, error } = await supabase.from("users").delete().eq("id", id).select()
   
   console.log("[v0] Server-side: Delete result - data:", data, "error:", error)
@@ -140,12 +166,28 @@ export async function deleteUser(id: string): Promise<void> {
     throw new Error("Error al eliminar usuario")
   }
   
-  if (data && data.length === 0) {
-    console.warn("[v0] Server-side: No user found with ID:", id)
-    throw new Error("Usuario no encontrado")
+  if (!data || data.length === 0) {
+    console.error("[v0] Server-side: No data returned from delete operation")
+    throw new Error("No se pudo eliminar el usuario")
   }
   
-  console.log("[v0] Server-side: User deleted successfully from Supabase")
+  console.log("[v0] Server-side: User deleted successfully from Supabase:", data)
+  
+  // Verificar que realmente se eliminó
+  const { data: verifyUser, error: verifyError } = await supabase
+    .from("users")
+    .select("id")
+    .eq("id", id)
+    .single()
+  
+  console.log("[v0] Server-side: Verification after deletion - data:", verifyUser, "error:", verifyError)
+  
+  if (verifyUser) {
+    console.error("[v0] Server-side: User still exists after deletion attempt!")
+    throw new Error("El usuario no se eliminó correctamente")
+  }
+  
+  console.log("[v0] Server-side: User deletion verified successfully")
 }
 
 function getRoleDbValue(role: Role): string {
@@ -323,6 +365,13 @@ export const userServiceClient = {
       throw new Error("Error al verificar usuario")
     }
     
+    if (!existingUser) {
+      console.warn("[v0] User not found with ID:", id)
+      return
+    }
+    
+    console.log("[v0] User found, proceeding with deletion:", existingUser)
+    
     // Ahora eliminar el usuario
     const { data, error } = await supabase.from("users").delete().eq("id", id).select()
     
@@ -333,6 +382,27 @@ export const userServiceClient = {
       throw new Error("Error al eliminar usuario")
     }
     
+    if (!data || data.length === 0) {
+      console.error("[v0] No data returned from delete operation")
+      throw new Error("No se pudo eliminar el usuario")
+    }
+    
     console.log("[v0] User deleted successfully from Supabase:", data)
+    
+    // Verificar que realmente se eliminó
+    const { data: verifyUser, error: verifyError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", id)
+      .single()
+    
+    console.log("[v0] Verification after deletion - data:", verifyUser, "error:", verifyError)
+    
+    if (verifyUser) {
+      console.error("[v0] User still exists after deletion attempt!")
+      throw new Error("El usuario no se eliminó correctamente")
+    }
+    
+    console.log("[v0] User deletion verified successfully")
   },
 }
