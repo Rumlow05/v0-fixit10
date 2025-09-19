@@ -1384,20 +1384,27 @@ const TicketsView: React.FC<TicketsViewProps> = ({
   }
 
   return (
-    <div className={`flex-1 grid ${isUserRole ? "grid-cols-7" : (isAIAssistantVisible ? "grid-cols-10" : "grid-cols-7")} h-full overflow-hidden bg-gray-50`}>
+    <div className={`flex-1 grid ${isUserRole ? "grid-cols-7" : (isAIAssistantVisible ? "grid-cols-10" : "grid-cols-7")} h-full overflow-hidden bg-gradient-to-br from-gray-50/80 to-white/60 backdrop-blur-sm`}>
       {/* Ticket List */}
-      <div className="col-span-3 bg-white border-r border-gray-200 overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">{isUserRole ? "Mis Solicitudes" : "Todos los Tickets"}</h2>
+      <div className="col-span-3 bg-white/95 backdrop-blur-sm border-r border-gray-200/60 overflow-y-auto shadow-sm">
+        <div className="p-4 md:p-6 border-b border-gray-200/60 bg-white/90 backdrop-blur-sm sticky top-0 z-10">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+                {isUserRole ? "Mis Solicitudes" : "Todos los Tickets"}
+              </h2>
+              <p className="text-sm text-gray-500">
+                {isUserRole ? "Gestiona tus solicitudes de soporte" : "Administra todos los tickets del sistema"}
+              </p>
+            </div>
             <div className="flex gap-3">
               {canUseAI && (
                 <button
                   onClick={() => setIsAIAssistantVisible(!isAIAssistantVisible)}
-                  className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${
-                    isAIAssistantVisible 
-                      ? "text-white bg-purple-600 hover:bg-purple-700" 
-                      : "text-purple-600 bg-purple-100 hover:bg-purple-200"
+                  className={`px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md ${
+                    isAIAssistantVisible
+                      ? "text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                      : "text-purple-600 bg-purple-100/80 hover:bg-purple-200/80 border border-purple-200/60"
                   }`}
                 >
                   {isAIAssistantVisible ? "Ocultar IA" : "Mostrar IA"}
@@ -1406,7 +1413,7 @@ const TicketsView: React.FC<TicketsViewProps> = ({
               {canCreate && (
                 <button
                   onClick={() => setCreateTicketModalOpen(true)}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   + Nuevo
                 </button>
@@ -1415,59 +1422,63 @@ const TicketsView: React.FC<TicketsViewProps> = ({
           </div>
 
           <div className={`grid gap-3 ${isUserRole ? 'grid-cols-2' : 'grid-cols-2'}`}>
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-              <div className="text-2xl font-bold text-blue-900">{stats.total}</div>
-              <div className="text-sm text-blue-700 font-medium">Total</div>
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100/80 p-4 md:p-5 rounded-2xl border border-blue-200/60 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="text-2xl md:text-3xl font-bold text-blue-800">{stats.total}</div>
+              <div className="text-sm text-blue-600 font-semibold">Total</div>
             </div>
-            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-xl border border-emerald-200">
-              <div className="text-2xl font-bold text-emerald-900">{stats.open}</div>
-              <div className="text-sm text-emerald-700 font-medium">Abiertos</div>
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/80 p-4 md:p-5 rounded-2xl border border-emerald-200/60 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="text-2xl md:text-3xl font-bold text-emerald-800">{stats.open}</div>
+              <div className="text-sm text-emerald-600 font-semibold">Abiertos</div>
             </div>
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
-              <div className="text-2xl font-bold text-orange-900">{stats.inProgress}</div>
-              <div className="text-sm text-orange-700 font-medium">En Progreso</div>
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100/80 p-4 md:p-5 rounded-2xl border border-amber-200/60 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="text-2xl md:text-3xl font-bold text-amber-800">{stats.inProgress}</div>
+              <div className="text-sm text-amber-600 font-semibold">En Progreso</div>
             </div>
             {isUserRole && (
-              <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
-                <div className="text-2xl font-bold text-green-900">{stats.resolved}</div>
-                <div className="text-sm text-green-700 font-medium">Resueltos</div>
+              <div className="bg-gradient-to-br from-green-50 to-green-100/80 p-4 md:p-5 rounded-2xl border border-green-200/60 shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="text-2xl md:text-3xl font-bold text-green-800">{stats.resolved}</div>
+                <div className="text-sm text-green-600 font-semibold">Resueltos</div>
               </div>
             )}
             {!isUserRole && (
-              <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl border border-red-200">
-                <div className="text-2xl font-bold text-red-900">{stats.high}</div>
-                <div className="text-sm text-red-700 font-medium">Alta Prioridad</div>
+              <div className="bg-gradient-to-br from-red-50 to-red-100/80 p-4 md:p-5 rounded-2xl border border-red-200/60 shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="text-2xl md:text-3xl font-bold text-red-800">{stats.high}</div>
+                <div className="text-sm text-red-600 font-semibold">Alta Prioridad</div>
               </div>
             )}
           </div>
         </div>
-        <div className="p-2">
+        <div className="p-3 md:p-4">
           {filteredTickets.map((ticket) => 
             ticket ? (
             <div
               key={ticket.id}
               onClick={() => onSelectTicket(ticket)}
-              className={`p-4 m-2 rounded-xl cursor-pointer transition-all duration-200 border ${
+              className={`p-4 md:p-5 m-2 md:m-3 rounded-2xl cursor-pointer transition-all duration-300 border ${
                 selectedTicket?.id === ticket.id
-                  ? "bg-primary/5 border-primary shadow-lg"
-                  : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-md"
+                  ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-emerald-300 shadow-lg shadow-emerald-500/10"
+                  : "bg-white/90 backdrop-blur-sm border-gray-200/60 hover:border-gray-300 hover:shadow-lg hover:bg-white"
               }`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-gray-900 text-sm leading-tight">{ticket.title}</h3>
-                <span className="text-xs text-gray-500">#{ticket.id}</span>
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="font-bold text-gray-900 text-sm md:text-base leading-tight pr-2">{ticket.title}</h3>
+                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-lg font-mono">#{ticket.id.slice(0, 8)}</span>
               </div>
-              <div className="flex gap-2 mb-2">
+              <div className="flex gap-2 mb-3">
                 <span
-                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${getPriorityColor(ticket.priority)}`}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-xl border ${getPriorityColor(ticket.priority)}`}
                 >
                   {ticket.priority}
                 </span>
-                <span className={`px-2 py-1 text-xs font-medium rounded-lg border ${getStatusColor(ticket.status)}`}>
+                <span className={`px-3 py-1.5 text-xs font-semibold rounded-xl border ${getStatusColor(ticket.status)}`}>
                   {ticket.status}
                 </span>
               </div>
-              {!isUserRole && <p className="text-xs text-gray-500">Solicitante: {getUserName(ticket.requester_id)}</p>}
+              {!isUserRole && (
+                <p className="text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+                  <span className="font-medium">Solicitante:</span> {getUserName(ticket.requester_id)}
+                </p>
+              )}
             </div>
             ) : null
           )}
@@ -1475,7 +1486,7 @@ const TicketsView: React.FC<TicketsViewProps> = ({
       </div>
 
       {/* Ticket Detail */}
-      <div className={`col-span-4 overflow-y-auto bg-white ${isUserRole ? "border-r-0" : ""}`}>
+      <div className={`col-span-4 overflow-y-auto bg-white/95 backdrop-blur-sm shadow-sm ${isUserRole ? "border-r-0" : ""}`}>
         {selectedTicket ? (
           <div className="p-6">
             <div className="mb-6">
@@ -1723,11 +1734,11 @@ const TicketsView: React.FC<TicketsViewProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full bg-gray-50">
+          <div className="flex items-center justify-center h-full bg-gradient-to-br from-gray-50/80 to-white/60 backdrop-blur-sm">
             <div className="text-center max-w-md mx-auto px-6">
-              <div className="w-20 h-20 mx-auto mb-6 bg-emerald-100 rounded-full flex items-center justify-center">
+              <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-3xl flex items-center justify-center shadow-lg">
                 <svg
-                  className="w-10 h-10 text-emerald-600"
+                  className="w-12 h-12 text-emerald-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1740,18 +1751,25 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Selecciona un ticket</h3>
-              <p className="text-gray-500 text-base leading-relaxed">
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Selecciona un ticket</h3>
+              <p className="text-gray-600 text-base leading-relaxed mb-6">
                 Elige un ticket de la lista para ver todos sus detalles, comentarios y opciones de gestión.
               </p>
               {filteredTickets.length === 0 && (
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-blue-800 text-sm">
+                <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-blue-100/80 rounded-2xl border border-blue-200/60 shadow-sm">
+                  <div className="w-12 h-12 mx-auto mb-4 bg-blue-100 rounded-2xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-blue-800 text-sm font-medium">
                     <strong>No hay tickets disponibles</strong><br />
-                    {isUserRole 
-                      ? "No tienes tickets creados aún." 
-                      : "No hay tickets activos en el sistema."
-                    }
+                    <span className="text-blue-600 mt-2 block">
+                      {isUserRole
+                        ? "No tienes tickets creados aún."
+                        : "No hay tickets activos en el sistema."
+                      }
+                    </span>
                   </p>
                 </div>
               )}
@@ -3667,7 +3685,7 @@ const App: React.FC = () => {
           />
           
           {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-hidden md:ml-0 bg-white/50 backdrop-blur-sm">
+          <div className="flex-1 flex flex-col overflow-hidden md:ml-0 bg-gradient-to-br from-gray-50/80 to-white/60 backdrop-blur-sm">
             {currentView === "tickets" ? (
             <TicketsView
               tickets={tickets}
