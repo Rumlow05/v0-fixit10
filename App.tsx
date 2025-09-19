@@ -63,7 +63,7 @@ const IconLogout = () => (
   >
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
     <polyline points="16 17 21 12 16 7"></polyline>
-    <line x1="21" y2="12" x2="9" y2="12"></line>
+    <line x1="21" y1="12" x2="9" y2="12"></line>
   </svg>
 )
 const IconSpinner = () => (
@@ -87,7 +87,17 @@ const IconSpinner = () => (
 
 // --- Sub-components ---
 
-const LoginScreen = ({
+interface LoginScreenProps {
+  onLogin: (e: React.FormEvent) => void
+  onSelectRole: (role: Role) => void
+  showRoleSelection: boolean
+  setShowRoleSelection: (show: boolean) => void
+  loginEmail: string
+  setLoginEmail: (email: string) => void
+  loginError: string
+}
+
+const LoginScreen: React.FC<LoginScreenProps> = ({
   onLogin,
   onSelectRole,
   showRoleSelection,
@@ -339,7 +349,7 @@ const TransferToLevel2Modal = ({
             <select
               id="level2-assignee"
               value={selectedUserId}
-              onChange={(e) => setSelectedUserId(Number(e.target.value))}
+              onChange={(e) => setSelectedUserId(e.target.value)}
               required
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md"
             >
@@ -371,10 +381,20 @@ const TransferToLevel2Modal = ({
   )
 }
 
-const Sidebar = ({ currentUser, currentView, setCurrentView, onLogout, setCreateTicketModalOpen, setIsWhatsAppAdminOpen, isSyncing }) => {
+interface SidebarProps {
+  currentUser: User | null
+  currentView: string
+  setCurrentView: (view: string) => void
+  onLogout: () => void
+  setCreateTicketModalOpen: (open: boolean) => void
+  setIsWhatsAppAdminOpen: (open: boolean) => void
+  isSyncing: boolean
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, setCurrentView, onLogout, setCreateTicketModalOpen, setIsWhatsAppAdminOpen, isSyncing }) => {
   console.log("[v0] Current user in Sidebar:", currentUser)
-  console.log("[v0] User role:", currentUser.role)
-  console.log("[v0] Is admin?", currentUser.role === Role.ADMIN)
+  console.log("[v0] User role:", currentUser?.role)
+  console.log("[v0] Is admin?", currentUser?.role === Role.ADMIN)
 
   return (
     <aside className="w-72 bg-white border-r border-gray-200 flex flex-col shadow-lg">
@@ -421,7 +441,7 @@ const Sidebar = ({ currentUser, currentView, setCurrentView, onLogout, setCreate
             </svg>
             Tickets Resueltos
           </button>
-          {currentUser.role === Role.ADMIN && (
+          {currentUser?.role === Role.ADMIN && (
             <button
               onClick={() => setCurrentView("users")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all duration-200 ${
@@ -461,9 +481,9 @@ const Sidebar = ({ currentUser, currentView, setCurrentView, onLogout, setCreate
       </nav>
       <div className="p-4 border-t border-gray-200">
         <div className="bg-gray-50 rounded-xl p-4 mb-4">
-          <div className="font-semibold text-gray-900 text-sm">{currentUser.name}</div>
-          <div className="text-xs text-gray-600 mt-1">{currentUser.role}</div>
-          <div className="text-xs text-gray-500 mt-1">{currentUser.email}</div>
+          <div className="font-semibold text-gray-900 text-sm">{currentUser?.name}</div>
+          <div className="text-xs text-gray-600 mt-1">{currentUser?.role}</div>
+          <div className="text-xs text-gray-500 mt-1">{currentUser?.email}</div>
         </div>
         <button
           onClick={onLogout}
@@ -476,7 +496,14 @@ const Sidebar = ({ currentUser, currentView, setCurrentView, onLogout, setCreate
   )
 }
 
-const CreateTicketModal = ({ isOpen, onClose, onCreate, currentUser }) => {
+interface CreateTicketModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onCreate: (ticketData: any) => void
+  currentUser: User | null
+}
+
+const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, onCreate, currentUser }) => {
   const [formData, setFormData] = useState({ title: "", description: "", priority: Priority.MEDIUM })
   const [attachments, setAttachments] = useState<File[]>([])
 
@@ -692,7 +719,15 @@ const CreateTicketModal = ({ isOpen, onClose, onCreate, currentUser }) => {
   )
 }
 
-const AssignTicketModal = ({ isOpen, onClose, onAssign, users, ticket }) => {
+interface AssignTicketModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onAssign: (userId: string) => void
+  users: User[]
+  ticket: Ticket | null
+}
+
+const AssignTicketModal: React.FC<AssignTicketModalProps> = ({ isOpen, onClose, onAssign, users, ticket }) => {
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>()
 
   useEffect(() => {
@@ -1053,7 +1088,7 @@ const WhatsAppAdminPanel = ({
   isOpen: boolean;
   onClose: () => void;
   qrCode: string | null;
-  status: {isConnected: boolean, needsQR: boolean, isAvailable?: boolean};
+  status: {isConnected: boolean, needsQR: boolean};
   onConnect: () => void;
   onDisconnect: () => void;
 }) => {
@@ -1076,7 +1111,7 @@ const WhatsAppAdminPanel = ({
 
         <div className="space-y-4">
           {/* Estado de disponibilidad */}
-          {status.isAvailable === false && (
+          {false && (
             <div className="p-4 rounded-lg border border-yellow-200 bg-yellow-50">
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
@@ -1089,7 +1124,7 @@ const WhatsAppAdminPanel = ({
           )}
 
           {/* Estado de conexión */}
-          {status.isAvailable !== false && (
+          {true && (
             <div className="p-4 rounded-lg border">
               <div className="flex items-center space-x-2 mb-2">
                 <div className={`w-3 h-3 rounded-full ${status.isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
@@ -1161,7 +1196,14 @@ const WhatsAppAdminPanel = ({
   )
 }
 
-const AddCommentModal = ({ isOpen, onClose, onAddComment, currentUser }) => {
+interface AddCommentModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onAddComment: (comment: string) => void
+  currentUser: User | null
+}
+
+const AddCommentModal: React.FC<AddCommentModalProps> = ({ isOpen, onClose, onAddComment, currentUser }) => {
   const [comment, setComment] = useState("")
 
   useEffect(() => {
@@ -1220,7 +1262,34 @@ const AddCommentModal = ({ isOpen, onClose, onAddComment, currentUser }) => {
   )
 }
 
-const TicketsView = ({
+interface TicketsViewProps {
+  tickets: Ticket[]
+  users: User[]
+  currentUser: User | null
+  selectedTicket: Ticket | null
+  onSelectTicket: (ticket: Ticket) => void
+  onGenerateReport: () => void
+  setTransferModalOpen: (open: boolean) => void
+  solution: string
+  isSuggesting: boolean
+  report: string
+  isReporting: boolean
+  onCreateTicket: (ticketData: any) => void
+  onAssignTicket: (userId: string) => void
+  onResolveTicket: (ticketId: string, status: Status) => void
+  onAddComment: (comment: string) => void
+  onCreateTicketModalOpen: boolean
+  setCreateTicketModalOpen: (open: boolean) => void
+  onAssignTicketModalOpen: boolean
+  setAssignTicketModalOpen: (open: boolean) => void
+  setPriorityModalOpen: (open: boolean) => void
+  onAddCommentModalOpen: boolean
+  setAddCommentModalOpen: (open: boolean) => void
+  setResolutionModalOpen: (open: boolean) => void
+  setDeleteModalOpen: (open: boolean) => void
+}
+
+const TicketsView: React.FC<TicketsViewProps> = ({
   tickets,
   users,
   currentUser,
@@ -1249,19 +1318,19 @@ const TicketsView = ({
   const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(false)
   
   const getUserName = (id: string | undefined) =>
-    id ? users.find((u) => u.id === id)?.name || "Desconocido" : "Sin Asignar"
-  const isUserRole = currentUser.role === Role.USER
-  const canUseAI = [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role)
-  const canAssign = currentUser.role === Role.ADMIN
-  const canResolve = [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role)
+    id ? users.find((u: User) => u.id === id)?.name || "Desconocido" : "Sin Asignar"
+  const isUserRole = currentUser?.role === Role.USER
+  const canUseAI = currentUser ? [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role) : false
+  const canAssign = currentUser?.role === Role.ADMIN
+  const canResolve = currentUser ? [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role) : false
   const canAddComment = true // Todos los usuarios pueden agregar comentarios
   const canCreate = true
 
   // Filtrar tickets: usuarios ven todos sus tickets, otros roles ven solo activos
   const filteredTickets = isUserRole 
-    ? tickets.filter((t) => t && t.requester_id === currentUser.id) // Usuarios ven TODOS sus tickets
-    : currentUser.role === Role.LEVEL_1
-      ? tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED && t.transferred_by !== currentUser.id) // Nivel 1 no ve tickets que ha transferido
+    ? tickets.filter((t) => t && t.requester_id === currentUser?.id) // Usuarios ven TODOS sus tickets
+    : currentUser?.role === Role.LEVEL_1
+      ? tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED && t.transferred_by !== currentUser?.id) // Nivel 1 no ve tickets que ha transferido
       : tickets.filter((t) => t && t.status !== Status.RESOLVED && t.status !== Status.CLOSED) // Otros roles ven solo activos
   
   console.log("[v0] MainView - All tickets:", tickets.length)
@@ -1484,7 +1553,7 @@ const TicketsView = ({
                   (selectedTicket.comments || [])
                     .slice()
                     .reverse()
-                    .map((comment) => (
+                    .map((comment: any) => (
                       <div key={comment.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                         <p className="text-gray-800 mb-2">{comment.text}</p>
                         <div className="flex justify-between items-center text-xs text-gray-500">
@@ -1526,7 +1595,7 @@ const TicketsView = ({
                   </button>
                 )}
 
-                {currentUser.role === Role.LEVEL_1 && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
+                {currentUser?.role === Role.LEVEL_1 && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
                   <button
                     onClick={() => setTransferModalOpen(true)}
                     className="px-6 py-3 text-sm font-semibold text-white bg-orange-600 rounded-xl hover:bg-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -1535,11 +1604,11 @@ const TicketsView = ({
                   </button>
                 )}
 
-                {(currentUser.role === Role.LEVEL_1 || currentUser.role === Role.LEVEL_2 || currentUser.role === Role.ADMIN) && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
+                {((currentUser?.role === Role.LEVEL_1 || currentUser?.role === Role.LEVEL_2 || currentUser?.role === Role.ADMIN)) && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
                   <button
                     onClick={() => {
                       console.log("[v0] Cambiar Prioridad button clicked")
-                      console.log("[v0] Current user role:", currentUser.role)
+                      console.log("[v0] Current user role:", currentUser?.role)
                       console.log("[v0] Selected ticket status:", selectedTicket.status)
                       setPriorityModalOpen(true)
                     }}
@@ -1549,7 +1618,7 @@ const TicketsView = ({
                   </button>
                 )}
 
-                {currentUser.role === Role.ADMIN && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
+                {currentUser?.role === Role.ADMIN && selectedTicket.status !== Status.RESOLVED && selectedTicket.status !== Status.CLOSED && (
                   <button
                     onClick={() => setDeleteModalOpen(true)}
                     className="px-6 py-3 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -1636,7 +1705,7 @@ const TicketsView = ({
               </div>
             )}
 
-            {currentUser.role === Role.ADMIN && (
+            {currentUser?.role === Role.ADMIN && (
               <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                 <h4 className="font-semibold text-gray-900 mb-4">Panel de Administración</h4>
                 <button
@@ -1672,7 +1741,18 @@ const TicketsView = ({
   )
 }
 
-const UserManagementView = ({
+interface UserManagementViewProps {
+  users: User[]
+  currentUser: User | null
+  onOpenUserModal: (user?: User) => void
+  onDeleteUser: (userId: string) => void
+  isUserModalOpen: boolean
+  onCloseUserModal: () => void
+  onSaveUser: (userData: any) => void
+  editingUser: User | null
+}
+
+const UserManagementView: React.FC<UserManagementViewProps> = ({
   users,
   currentUser,
   onOpenUserModal,
@@ -1730,7 +1810,13 @@ const UserManagementView = ({
   </div>
 )
 
-const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
+interface ResolvedTicketsViewProps {
+  tickets: Ticket[]
+  users: User[]
+  currentUser: User | null
+}
+
+const ResolvedTicketsView: React.FC<ResolvedTicketsViewProps> = ({ tickets, users, currentUser }) => {
   const [filteredTickets, setFilteredTickets] = useState<Ticket[]>([])
   const [selectedResponsible, setSelectedResponsible] = useState<string>("all")
   const [startDate, setStartDate] = useState<string>("")
@@ -1751,7 +1837,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
     })
     
     // Filtrar por rol: Usuarios solo ven sus propios tickets, otros roles ven todos
-    const isUserRole = currentUser.role === Role.USER
+    const isUserRole = currentUser?.role === Role.USER
     
     // Incluir tanto tickets resueltos como cerrados
     let resolvedTickets = tickets.filter(ticket => {
@@ -1759,13 +1845,13 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
       
       // Si es usuario, solo mostrar sus propios tickets
       if (isUserRole) {
-        const isOwnTicket = ticket.requester_id === currentUser.id
+        const isOwnTicket = ticket.requester_id === currentUser?.id
         console.log("[v0] ResolvedTicketsView - User role - Checking ticket:", {
           id: ticket?.id,
           title: ticket?.title,
           status: ticket?.status,
           requester_id: ticket?.requester_id,
-          currentUserId: currentUser.id,
+          currentUserId: currentUser?.id,
           isResolved: isResolved,
           isOwnTicket: isOwnTicket
         })
@@ -1831,7 +1917,7 @@ const ResolvedTicketsView = ({ tickets, users, currentUser }) => {
 
   const getUserName = (id: string | undefined) => {
     if (!id) return "Sin Asignar"
-    const user = users.find((u) => u.id === id)
+    const user = users.find((u: User) => u.id === id)
     return user ? user.name : "Desconocido"
   }
 
@@ -2462,7 +2548,7 @@ const App: React.FC = () => {
         // Verificar si el usuario fue eliminado (marcado en localStorage)
         if (typeof window !== 'undefined') {
           const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
-          const isDeleted = deletedUsers.find((du: any) => du.id === currentUser.id || du.email === currentUser.email)
+          const isDeleted = deletedUsers.find((du: any) => du.id === currentUser?.id || du.email === currentUser?.email)
           
           if (isDeleted) {
             console.log("[v0] Current user was deleted, logging out...")
@@ -2470,14 +2556,14 @@ const App: React.FC = () => {
             setCurrentUser(null)
             localStorage.removeItem("fixit_currentUser")
             // Limpiar la entrada de usuario eliminado
-            const updatedDeletedUsers = deletedUsers.filter((du: any) => du.id !== currentUser.id && du.email !== currentUser.email)
+            const updatedDeletedUsers = deletedUsers.filter((du: any) => du.id !== currentUser?.id && du.email !== currentUser?.email)
             localStorage.setItem('fixit_deletedUsers', JSON.stringify(updatedDeletedUsers))
             return
           }
         }
         
         // Verificar si el usuario existe en la base de datos actual
-        const userExists = users.find(u => u.id === currentUser.id && u.email === currentUser.email)
+        const userExists = users.find(u => u.id === currentUser?.id && u.email === currentUser?.email)
         
         if (!userExists) {
           console.log("[v0] Current user no longer exists in database, logging out...")
@@ -2526,7 +2612,7 @@ const App: React.FC = () => {
         console.log("[v0] Users in local state but NOT in Supabase:", usersInCurrentButNotInFresh.map(u => ({ id: u.id, email: u.email, name: u.name })))
         
         // Verificar si el usuario actual sigue existiendo
-        const currentUserExists = freshUsers.find(u => u.id === currentUser.id && u.email === currentUser.email)
+        const currentUserExists = freshUsers.find(u => u.id === currentUser?.id && u.email === currentUser?.email)
         
         if (!currentUserExists) {
           console.log("[v0] Current user no longer exists during sync, logging out...")
@@ -2589,7 +2675,7 @@ const App: React.FC = () => {
       
       // Verificar si es un evento de eliminación de usuario
       if (event.type === 'USER_DELETED' && 
-          (event.data.id === currentUser.id || event.data.email === currentUser.email)) {
+          (event.data.id === currentUser?.id || event.data.email === currentUser?.email)) {
         console.log("[v0] User deletion event detected, logging out...")
         alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
         setCurrentUser(null)
@@ -2629,7 +2715,7 @@ const App: React.FC = () => {
     e.preventDefault()
     if (loginEmail === "tech@emprendetucarrera.com.co") {
       // Buscar el usuario base en la base de datos
-      const baseUser = users.find((u) => u.email === "tech@emprendetucarrera.com.co")
+      const baseUser = users.find((u: User) => u.email === "tech@emprendetucarrera.com.co")
       if (baseUser) {
         setShowRoleSelection(true)
         setLoginError("")
@@ -2650,7 +2736,7 @@ const App: React.FC = () => {
       }
     }
     
-    const user = users.find((u) => u.email === loginEmail)
+    const user = users.find((u: User) => u.email === loginEmail)
     if (user) {
       setCurrentUser(user)
       setLoginError("")
@@ -2661,11 +2747,11 @@ const App: React.FC = () => {
 
   const handleSelectRole = (role: Role) => {
     // Solo usar usuarios reales de la base de datos
-    let userToImpersonate = users.find((u) => u.role === role)
+    let userToImpersonate = users.find((u: User) => u.role === role)
 
     if (!userToImpersonate) {
       // Si no hay usuario con ese rol, usar el usuario base tech@emprendetucarrera.com.co
-      userToImpersonate = users.find((u) => u.email === "tech@emprendetucarrera.com.co")
+      userToImpersonate = users.find((u: User) => u.email === "tech@emprendetucarrera.com.co")
       
       if (!userToImpersonate) {
         setLoginError("No se encontró el usuario administrador en la base de datos.")
@@ -2771,7 +2857,7 @@ const App: React.FC = () => {
         setWhatsappStatus({
           isConnected: result.data.isConnected,
           needsQR: result.data.needsQR,
-          isAvailable: result.data.isAvailable
+          // isAvailable: result.data.isAvailable
         })
         setWhatsappQR(result.data.qrCode)
       }
@@ -2781,7 +2867,7 @@ const App: React.FC = () => {
       setWhatsappStatus({
         isConnected: false,
         needsQR: false,
-        isAvailable: false
+        // isAvailable: false
       })
     }
   }
@@ -2905,7 +2991,7 @@ const App: React.FC = () => {
       console.error("[v0] Error sending email notification:", error)
       // Show user-friendly error message
       if (error instanceof Error) {
-        console.error("[v0] Detailed error:", error.message)
+        console.error("[v0] Detailed error:", (error as Error).message)
       }
       return false
     }
@@ -2925,7 +3011,7 @@ const App: React.FC = () => {
       if (editingUser) {
         console.log("[v0] Updating existing user with ID:", editingUser.id)
         user = await userServiceClient.updateUser(editingUser.id, userData)
-        setUsers(users.map((u) => (u.id === user.id ? user : u)))
+        setUsers(users.map((u: User) => (u.id === user.id ? user : u)))
         console.log("[v0] User updated successfully:", user)
         
         // Crear evento de actualización de usuario usando SyncService
@@ -2954,7 +3040,7 @@ const App: React.FC = () => {
       closeUserModal()
       console.log("[v0] User save process completed successfully")
     } catch (error) {
-      const errorMessage = error.message || "Error desconocido"
+      const errorMessage = (error as Error).message || "Error desconocido"
 
       // Check if it's a validation error (like duplicate email)
       if (errorMessage.includes("Ya existe un usuario") || errorMessage.includes("duplicate")) {
@@ -2964,8 +3050,8 @@ const App: React.FC = () => {
         // This is a real system error
         console.error("[v0] System error saving user:", error)
         console.error("[v0] Error details:", {
-          message: error.message,
-          stack: error.stack,
+          message: (error as Error).message,
+          stack: (error as Error).stack,
           userData: userData,
         })
         showError("Error del Sistema", "Error al guardar usuario: " + errorMessage)
@@ -3032,7 +3118,7 @@ const App: React.FC = () => {
         priority: ticketData.priority,
         category: ticketData.category,
         assigned_to: ticketData.assigned_to,
-        requester_id: currentUser.id,
+        requester_id: currentUser?.id,
       }
       console.log("[v0] handleCreateTicket - Creating ticket with data:", ticketToCreate)
       const newTicket = await ticketServiceClient.createTicket(ticketToCreate)
@@ -3069,7 +3155,7 @@ const App: React.FC = () => {
       console.log("[v0] handleUpdateTicket - Updated ticket received:", updatedTicket)
       console.log("[v0] handleUpdateTicket - Updated ticket status:", updatedTicket?.status, "type:", typeof updatedTicket?.status)
       
-      const newTickets = tickets.map((t) => (t && t.id === ticketId ? updatedTicket : t)).filter(t => t)
+      const newTickets = tickets.map((t: Ticket) => (t && t.id === ticketId ? updatedTicket : t)).filter((t: Ticket) => t)
       console.log("[v0] handleUpdateTicket - New tickets array:", newTickets)
       setTickets(newTickets)
 
@@ -3108,7 +3194,7 @@ const App: React.FC = () => {
       closeAssignTicketModal()
 
       // Send notification email
-      const assignee = users.find((u) => u.id === assigneeId)
+      const assignee = users.find((u: User) => u.id === assigneeId)
       if (assignee) {
         await sendEmailNotification(
           "ticket-updated",
@@ -3140,8 +3226,8 @@ const App: React.FC = () => {
       console.log("[v0] handleResolveTicket - Ticket resolved successfully")
 
       // Send notification email
-      const ticket = tickets.find((t) => t && t.id === ticketId)
-      const requester = users.find((u) => u.id === ticket?.requester_id)
+      const ticket = tickets.find((t: Ticket) => t && t.id === ticketId)
+      const requester = users.find((u: User) => u.id === ticket?.requester_id)
       if (ticket && requester) {
         await sendEmailNotification(
           "ticket-updated",
@@ -3179,7 +3265,7 @@ const App: React.FC = () => {
       const { commentService } = await import("@/services/commentService")
       await commentService.createComment({
         ticket_id: selectedTicket.id,
-        user_id: currentUser.id,
+        user_id: currentUser?.id,
         content: commentText
       })
       
@@ -3199,11 +3285,11 @@ const App: React.FC = () => {
       await handleUpdateTicket(selectedTicket.id, {
         assigned_to: assigneeId,
         status: Status.IN_PROGRESS,
-        transferred_by: currentUser.id, // Marcar quién transfirió el ticket
+        transferred_by: currentUser?.id, // Marcar quién transfirió el ticket
       })
       
       // Agregar comentario automático sobre la transferencia
-      const assignee = users.find((u) => u.id === assigneeId)
+      const assignee = users.find((u: User) => u.id === assigneeId)
       if (assignee) {
         await handleAddComment(
           `Ticket transferido a Nivel 2 - Asignado a: ${assignee.name} (${assignee.role})`
@@ -3252,7 +3338,7 @@ const App: React.FC = () => {
       setIsPriorityModalOpen(false)
 
       // Send notification email al solicitante
-      const requester = users.find((u) => u.id === selectedTicket.requester_id)
+      const requester = users.find((u: User) => u.id === selectedTicket.requester_id)
       if (requester) {
         await sendEmailNotification(
           "ticket-updated",
@@ -3293,7 +3379,7 @@ const App: React.FC = () => {
       setIsResolutionModalOpen(false)
 
       // Send notification email al solicitante
-      const requester = users.find((u) => u.id === selectedTicket.requester_id)
+      const requester = users.find((u: User) => u.id === selectedTicket.requester_id)
       if (requester) {
         await sendEmailNotification(
           "ticket-updated",
@@ -3330,7 +3416,7 @@ const App: React.FC = () => {
       await handleAddComment(deleteComment)
       
       // Send notification email al solicitante antes de eliminar
-      const requester = users.find((u) => u.id === selectedTicket.requester_id)
+      const requester = users.find((u: User) => u.id === selectedTicket.requester_id)
       if (requester) {
         await sendEmailNotification(
           "ticket-updated",
@@ -3431,7 +3517,7 @@ const App: React.FC = () => {
           <Sidebar
             currentUser={currentUser}
             currentView={currentView}
-            setCurrentView={setCurrentView}
+            setCurrentView={(view: string) => setCurrentView(view as "users" | "tickets" | "resolved")}
             onLogout={handleLogout}
             setCreateTicketModalOpen={openCreateTicketModal}
             setIsWhatsAppAdminOpen={setIsWhatsAppAdminOpen}
@@ -3549,7 +3635,7 @@ const App: React.FC = () => {
 
 export default App
 
-const Database = ({ className }) => (
+const Database = ({ className }: { className: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
   </svg>
