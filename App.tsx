@@ -3667,7 +3667,7 @@ const App: React.FC = () => {
             <Sidebar
               currentUser={currentUser}
               currentView={currentView}
-              setCurrentView={(view: string) => setCurrentView(view as "users" | "tickets" | "resolved")}
+              setCurrentView={setCurrentView}
               onLogout={handleLogout}
               setCreateTicketModalOpen={openCreateTicketModal}
               setIsWhatsAppAdminOpen={setIsWhatsAppAdminOpen}
@@ -3705,9 +3705,6 @@ const App: React.FC = () => {
                     onTicketUpdate={handleUpdateTicket}
                     onTicketDelete={handleDeleteTicket}
                     isLoading={isLoadingTickets}
-                    currentView={currentView}
-                    setCurrentView={setCurrentView}
-                    userCount={users.length}
                   />
                 )}
                 

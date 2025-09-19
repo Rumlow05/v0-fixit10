@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { Ticket, User, Role, Status, Priority } from '@/types'
 import { useMobile } from '@/hooks/useMobile'
-import MobileBottomNavigation from './MobileBottomNavigation'
 
 interface MobileTicketsViewProps {
   tickets: Ticket[]
@@ -13,9 +12,6 @@ interface MobileTicketsViewProps {
   onTicketUpdate: (ticketId: string, updates: Partial<Ticket>) => void
   onTicketDelete: (ticketId: string) => void
   isLoading: boolean
-  currentView: string
-  setCurrentView: (view: string) => void
-  userCount?: number
 }
 
 const MobileTicketsView: React.FC<MobileTicketsViewProps> = ({
@@ -25,10 +21,7 @@ const MobileTicketsView: React.FC<MobileTicketsViewProps> = ({
   onTicketSelect,
   onTicketUpdate,
   onTicketDelete,
-  isLoading,
-  currentView,
-  setCurrentView,
-  userCount = 0
+  isLoading
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'open' | 'progress' | 'resolved'>('all')
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
@@ -110,48 +103,107 @@ const MobileTicketsView: React.FC<MobileTicketsViewProps> = ({
             </button>
           </div>
 
-          {/* Tabs de navegación */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === 'all'
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Todos ({stats.total})
-            </button>
-            <button
-              onClick={() => setActiveTab('open')}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === 'open'
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Abiertos ({stats.open})
-            </button>
-            <button
-              onClick={() => setActiveTab('progress')}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === 'progress'
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              En Progreso ({stats.progress})
-            </button>
-            <button
-              onClick={() => setActiveTab('resolved')}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === 'resolved'
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Resueltos ({tickets.filter(t => t.status === Status.RESOLVED).length})
-            </button>
+          {/* Filtros mejorados */}
+          <div className="space-y-3">
+            {/* Filtros principales */}
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 shadow-sm ${
+                  activeTab === 'all'
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-emerald-500/25'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${activeTab === 'all' ? 'bg-white' : 'bg-gray-400'}`}></div>
+                Todos
+                <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                  activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {stats.total}
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveTab('open')}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 shadow-sm ${
+                  activeTab === 'open'
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/25'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${activeTab === 'open' ? 'bg-white' : 'bg-blue-400'}`}></div>
+                Abiertos
+                <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                  activeTab === 'open' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-600'
+                }`}>
+                  {stats.open}
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveTab('progress')}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 shadow-sm ${
+                  activeTab === 'progress'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-orange-500/25'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${activeTab === 'progress' ? 'bg-white' : 'bg-orange-400'}`}></div>
+                En Progreso
+                <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                  activeTab === 'progress' ? 'bg-white/20 text-white' : 'bg-orange-100 text-orange-600'
+                }`}>
+                  {stats.progress}
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveTab('resolved')}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 shadow-sm ${
+                  activeTab === 'resolved'
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-green-500/25'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${activeTab === 'resolved' ? 'bg-white' : 'bg-green-400'}`}></div>
+                Resueltos
+                <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                  activeTab === 'resolved' ? 'bg-white/20 text-white' : 'bg-green-100 text-green-600'
+                }`}>
+                  {tickets.filter(t => t.status === Status.RESOLVED).length}
+                </span>
+              </button>
+            </div>
+
+            {/* Filtros adicionales por prioridad */}
+            <div className="flex gap-2 overflow-x-auto">
+              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors">
+                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                Crítica
+                <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-bold">
+                  {tickets.filter(t => t.priority === Priority.CRITICAL).length}
+                </span>
+              </button>
+              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors">
+                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                Alta
+                <span className="px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 font-bold">
+                  {tickets.filter(t => t.priority === Priority.HIGH).length}
+                </span>
+              </button>
+              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 transition-colors">
+                <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                Media
+                <span className="px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-600 font-bold">
+                  {tickets.filter(t => t.priority === Priority.MEDIUM).length}
+                </span>
+              </button>
+              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                Baja
+                <span className="px-1.5 py-0.5 rounded-full bg-green-100 text-green-600 font-bold">
+                  {tickets.filter(t => t.priority === Priority.LOW).length}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -255,16 +307,6 @@ const MobileTicketsView: React.FC<MobileTicketsViewProps> = ({
           </div>
         )}
       </div>
-
-      {/* Navegación inferior */}
-      <MobileBottomNavigation
-        currentView={currentView}
-        setCurrentView={setCurrentView}
-        currentUser={currentUser}
-        onCreateTicket={onCreateTicket}
-        ticketCount={tickets.length}
-        userCount={userCount}
-      />
     </div>
   )
 }
