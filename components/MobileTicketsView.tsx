@@ -26,26 +26,36 @@ const MobileTicketsView: React.FC<MobileTicketsViewProps> = ({
   const [activeTab, setActiveTab] = useState<'all' | 'open' | 'progress' | 'resolved'>('all')
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
 
-  // Filtrar tickets según la pestaña activa
+  // Filtrar tickets según la pestaña activa y el rol del usuario
   const filteredTickets = tickets.filter(ticket => {
+    // Filtrar por rol del usuario
+    const isUserRole = currentUser?.role === Role.USER
+    if (isUserRole && ticket.requester_id !== currentUser?.id) {
+      return false // Los usuarios solo ven sus propios tickets
+    }
+    
+    // Filtrar por estado según la pestaña activa
     switch (activeTab) {
       case 'open':
         return ticket.status === Status.OPEN
       case 'progress':
         return ticket.status === Status.IN_PROGRESS
       case 'resolved':
-        return ticket.status === Status.RESOLVED
+        return ticket.status === Status.RESOLVED || ticket.status === Status.CLOSED
       default:
         return true
     }
   })
 
-  // Calcular estadísticas
+  // Calcular estadísticas (respetando el filtro de rol)
+  const isUserRole = currentUser?.role === Role.USER
+  const userTickets = isUserRole ? tickets.filter(t => t.requester_id === currentUser?.id) : tickets
+  
   const stats = {
-    total: tickets.length,
-    open: tickets.filter(t => t.status === Status.OPEN).length,
-    progress: tickets.filter(t => t.status === Status.IN_PROGRESS).length,
-    highPriority: tickets.filter(t => t.priority === Priority.HIGH || t.priority === Priority.CRITICAL).length
+    total: userTickets.length,
+    open: userTickets.filter(t => t.status === Status.OPEN).length,
+    progress: userTickets.filter(t => t.status === Status.IN_PROGRESS).length,
+    highPriority: userTickets.filter(t => t.priority === Priority.HIGH || t.priority === Priority.CRITICAL).length
   }
 
   const handleTicketClick = (ticket: Ticket) => {
@@ -168,7 +178,7 @@ const MobileTicketsView: React.FC<MobileTicketsViewProps> = ({
                 <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                   activeTab === 'resolved' ? 'bg-white/20 text-white' : 'bg-green-100 text-green-600'
                 }`}>
-                  {tickets.filter(t => t.status === Status.RESOLVED).length}
+                  {userTickets.filter(t => t.status === Status.RESOLVED || t.status === Status.CLOSED).length}
                 </span>
               </button>
             </div>
@@ -179,28 +189,28 @@ const MobileTicketsView: React.FC<MobileTicketsViewProps> = ({
                 <div className="w-2 h-2 rounded-full bg-red-500"></div>
                 Crítica
                 <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-bold">
-                  {tickets.filter(t => t.priority === Priority.CRITICAL).length}
+                  {userTickets.filter(t => t.priority === Priority.CRITICAL).length}
                 </span>
               </button>
               <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors">
                 <div className="w-2 h-2 rounded-full bg-orange-500"></div>
                 Alta
                 <span className="px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 font-bold">
-                  {tickets.filter(t => t.priority === Priority.HIGH).length}
+                  {userTickets.filter(t => t.priority === Priority.HIGH).length}
                 </span>
               </button>
               <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 transition-colors">
                 <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                 Media
                 <span className="px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-600 font-bold">
-                  {tickets.filter(t => t.priority === Priority.MEDIUM).length}
+                  {userTickets.filter(t => t.priority === Priority.MEDIUM).length}
                 </span>
               </button>
               <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors">
                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
                 Baja
                 <span className="px-1.5 py-0.5 rounded-full bg-green-100 text-green-600 font-bold">
-                  {tickets.filter(t => t.priority === Priority.LOW).length}
+                  {userTickets.filter(t => t.priority === Priority.LOW).length}
                 </span>
               </button>
             </div>
