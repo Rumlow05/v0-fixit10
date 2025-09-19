@@ -20,15 +20,24 @@ export interface CreateUserData {
 // Server-side functions
 export async function getAllUsers(): Promise<User[]> {
   try {
+    console.log("[v0] getAllUsers: Starting to fetch users from Supabase...")
     const supabase = await createClient()
 
     const { data, error } = await supabase.from("users").select("*").order("created_at", { ascending: false })
 
     if (error) {
       console.error("[v0] Error fetching users:", error)
+      console.error("[v0] Error details:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
       return []
     }
 
+    console.log("[v0] getAllUsers: Successfully fetched users:", data?.length || 0)
+    console.log("[v0] getAllUsers: Users data:", data)
     return data || []
   } catch (error) {
     console.error("[v0] Database connection error:", error)
@@ -303,21 +312,31 @@ function getRoleEnumValue(dbRole: string): Role {
 export const userServiceClient = {
   async getAllUsers(): Promise<User[]> {
     try {
+      console.log("[v0] Client-side getAllUsers: Starting to fetch users from Supabase...")
       const supabase = createBrowserClient()
 
       const { data, error } = await supabase.from("users").select("*").order("created_at", { ascending: false })
 
       if (error) {
-        console.error("[v0] Error fetching users:", error)
+        console.error("[v0] Client-side Error fetching users:", error)
+        console.error("[v0] Client-side Error details:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
         return []
       }
+
+      console.log("[v0] Client-side getAllUsers: Successfully fetched users:", data?.length || 0)
+      console.log("[v0] Client-side getAllUsers: Users data:", data)
 
       return (data || []).map((user) => ({
         ...user,
         role: getRoleEnumValue(user.role),
       }))
     } catch (error) {
-      console.error("[v0] Database connection error:", error)
+      console.error("[v0] Client-side Database connection error:", error)
       return []
     }
   },
