@@ -3553,11 +3553,11 @@ const App: React.FC = () => {
               onAssignTicket={handleAssignTicket}
               onResolveTicket={handleResolveTicket}
               onAddComment={handleAddComment}
-              onCreateTicketModalOpen={createTicketModalOpen}
+              onCreateTicketModalOpen={isCreateTicketModalOpen}
               setCreateTicketModalOpen={setCreateTicketModalOpen}
-              onAssignTicketModalOpen={assignTicketModalOpen}
+              onAssignTicketModalOpen={isAssignTicketModalOpen}
               setAssignTicketModalOpen={setAssignTicketModalOpen}
-              onAddCommentModalOpen={addCommentModalOpen}
+              onAddCommentModalOpen={isAddCommentModalOpen}
               setAddCommentModalOpen={setAddCommentModalOpen}
               setPriorityModalOpen={setIsPriorityModalOpen}
               setResolutionModalOpen={setIsResolutionModalOpen}
