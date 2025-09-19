@@ -3632,7 +3632,7 @@ const App: React.FC = () => {
       )}
 
       {!showDatabaseSetup && (
-        <div className="h-screen bg-gray-50 flex flex-col md:flex-row overflow-hidden">
+        <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col md:flex-row overflow-hidden">
           {/* Mobile Header */}
           <MobileHeader
             currentUser={currentUser}
@@ -3667,7 +3667,7 @@ const App: React.FC = () => {
           />
           
           {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-hidden md:ml-0">
+          <div className="flex-1 flex flex-col overflow-hidden md:ml-0 bg-white/50 backdrop-blur-sm">
             {currentView === "tickets" ? (
             <TicketsView
               tickets={tickets}
