@@ -10,11 +10,6 @@ import { ticketServiceClient } from "./services/ticketService"
 import { syncService, createUserEvent, createTicketEvent } from "./services/syncService"
 import { useNotifications } from "./hooks/useNotifications"
 import NotificationContainer from "./components/NotificationContainer"
-import MobileHeader from "./components/MobileHeader"
-import MobileSidebar from "./components/MobileSidebar"
-import MobileTicketsView from "./components/MobileTicketsView"
-import MobileTicketDetails from "./components/MobileTicketDetails"
-import { useMobile } from "./hooks/useMobile"
 
 // --- SVG Icons ---
 const IconTickets = () => (
@@ -2472,9 +2467,6 @@ const App: React.FC = () => {
   // --- Notifications ---
   const { notifications, removeNotification, showSuccess, showError, showWarning, showInfo } = useNotifications()
   
-  // --- Mobile ---
-  const isMobile = useMobile()
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
       const savedUser = localStorage.getItem("fixit_currentUser")
@@ -2510,7 +2502,6 @@ const App: React.FC = () => {
   const [loginEmail, setLoginEmail] = useState("")
   const [loginError, setLoginError] = useState("")
   const [showRoleSelection, setShowRoleSelection] = useState(false)
-  const [showMobileTicketDetails, setShowMobileTicketDetails] = useState(false)
 
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
 
@@ -3655,28 +3646,7 @@ const App: React.FC = () => {
 
       {!showDatabaseSetup && (
         <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col md:flex-row overflow-hidden">
-          {/* Mobile Header */}
-          <MobileHeader
-            currentUser={currentUser}
-            onMenuClick={() => setIsMobileSidebarOpen(true)}
-            isSyncing={isSyncing}
-          />
-          
-          {/* Desktop Sidebar */}
-          <div className="hidden md:block">
-            <Sidebar
-              currentUser={currentUser}
-              currentView={currentView}
-              setCurrentView={(view: string) => setCurrentView(view as "users" | "tickets" | "resolved")}
-              onLogout={handleLogout}
-              setCreateTicketModalOpen={openCreateTicketModal}
-              setIsWhatsAppAdminOpen={setIsWhatsAppAdminOpen}
-              isSyncing={isSyncing}
-            />
-          </div>
-          
-          {/* Mobile Sidebar */}
-          <MobileSidebar
+          <Sidebar
             currentUser={currentUser}
             currentView={currentView}
             setCurrentView={(view: string) => setCurrentView(view as "users" | "tickets" | "resolved")}
@@ -3684,112 +3654,54 @@ const App: React.FC = () => {
             setCreateTicketModalOpen={openCreateTicketModal}
             setIsWhatsAppAdminOpen={setIsWhatsAppAdminOpen}
             isSyncing={isSyncing}
-            isOpen={isMobileSidebarOpen}
-            onClose={() => setIsMobileSidebarOpen(false)}
           />
           
           {/* Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden md:ml-0 bg-gradient-to-br from-gray-50/80 to-white/60 backdrop-blur-sm">
-            {/* Vista móvil optimizada */}
-            {isMobile ? (
-              <>
-                {currentView === "tickets" && !showMobileTicketDetails && (
-                  <MobileTicketsView
-                    tickets={tickets}
-                    currentUser={currentUser}
-                    onCreateTicket={() => setCreateTicketModalOpen(true)}
-                    onTicketSelect={(ticket) => {
-                      setSelectedTicket(ticket)
-                      setShowMobileTicketDetails(true)
-                    }}
-                    onTicketUpdate={handleUpdateTicket}
-                    onTicketDelete={handleDeleteTicket}
-                    isLoading={isLoadingTickets}
-                  />
-                )}
-                
-                {currentView === "tickets" && showMobileTicketDetails && (
-                  <MobileTicketDetails
-                    ticket={selectedTicket}
-                    currentUser={currentUser}
-                    onClose={() => setShowMobileTicketDetails(false)}
-                    onTicketUpdate={handleUpdateTicket}
-                    onTicketDelete={handleDeleteTicket}
-                    onAddComment={handleAddComment}
-                    users={users}
-                  />
-                )}
-
-                {currentView === "resolved" && (
-                  <ResolvedTicketsView
-                    tickets={tickets}
-                    users={users}
-                    currentUser={currentUser}
-                  />
-                )}
-
-                {currentView === "users" && (
-                  <UserManagementView
-                    users={users}
-                    currentUser={currentUser}
-                    onOpenUserModal={openUserModal}
-                    onDeleteUser={handleDeleteUser}
-                    isUserModalOpen={isUserModalOpen}
-                    onCloseUserModal={closeUserModal}
-                    onSaveUser={handleSaveUser}
-                    editingUser={editingUser}
-                  />
-                )}
-              </>
+            {currentView === "tickets" ? (
+              <TicketsView
+                tickets={tickets}
+                users={users}
+                currentUser={currentUser}
+                selectedTicket={selectedTicket}
+                onSelectTicket={handleSelectTicket}
+                onGenerateReport={handleGenerateReport}
+                setTransferModalOpen={setTransferModalOpen}
+                solution={solution}
+                isSuggesting={isSuggesting}
+                report={report}
+                isReporting={isReporting}
+                onCreateTicket={handleCreateTicket}
+                onAssignTicket={handleAssignTicket}
+                onResolveTicket={handleResolveTicket}
+                onAddComment={handleAddComment}
+                onCreateTicketModalOpen={isCreateTicketModalOpen}
+                setCreateTicketModalOpen={setCreateTicketModalOpen}
+                onAssignTicketModalOpen={isAssignTicketModalOpen}
+                setAssignTicketModalOpen={setAssignTicketModalOpen}
+                onAddCommentModalOpen={isAddCommentModalOpen}
+                setAddCommentModalOpen={setAddCommentModalOpen}
+                setPriorityModalOpen={setIsPriorityModalOpen}
+                setResolutionModalOpen={setIsResolutionModalOpen}
+                setDeleteModalOpen={setIsDeleteModalOpen}
+              />
+            ) : currentView === "resolved" ? (
+              <ResolvedTicketsView
+                tickets={tickets}
+                users={users}
+                currentUser={currentUser}
+              />
             ) : (
-              /* Vista de escritorio */
-              <>
-                {currentView === "tickets" ? (
-                  <TicketsView
-                    tickets={tickets}
-                    users={users}
-                    currentUser={currentUser}
-                    selectedTicket={selectedTicket}
-                    onSelectTicket={handleSelectTicket}
-                    onGenerateReport={handleGenerateReport}
-                    setTransferModalOpen={setTransferModalOpen}
-                    solution={solution}
-                    isSuggesting={isSuggesting}
-                    report={report}
-                    isReporting={isReporting}
-                    onCreateTicket={handleCreateTicket}
-                    onAssignTicket={handleAssignTicket}
-                    onResolveTicket={handleResolveTicket}
-                    onAddComment={handleAddComment}
-                    onCreateTicketModalOpen={isCreateTicketModalOpen}
-                    setCreateTicketModalOpen={setCreateTicketModalOpen}
-                    onAssignTicketModalOpen={isAssignTicketModalOpen}
-                    setAssignTicketModalOpen={setAssignTicketModalOpen}
-                    onAddCommentModalOpen={isAddCommentModalOpen}
-                    setAddCommentModalOpen={setAddCommentModalOpen}
-                    setPriorityModalOpen={setIsPriorityModalOpen}
-                    setResolutionModalOpen={setIsResolutionModalOpen}
-                    setDeleteModalOpen={setIsDeleteModalOpen}
-                  />
-                ) : currentView === "resolved" ? (
-                  <ResolvedTicketsView
-                    tickets={tickets}
-                    users={users}
-                    currentUser={currentUser}
-                  />
-                ) : (
-                  <UserManagementView
-                    users={users}
-                    currentUser={currentUser}
-                    onOpenUserModal={openUserModal}
-                    onDeleteUser={handleDeleteUser}
-                    isUserModalOpen={isUserModalOpen}
-                    onCloseUserModal={closeUserModal}
-                    onSaveUser={handleSaveUser}
-                    editingUser={editingUser}
-                  />
-                )}
-              </>
+              <UserManagementView
+                users={users}
+                currentUser={currentUser}
+                onOpenUserModal={openUserModal}
+                onDeleteUser={handleDeleteUser}
+                isUserModalOpen={isUserModalOpen}
+                onCloseUserModal={closeUserModal}
+                onSaveUser={handleSaveUser}
+                editingUser={editingUser}
+              />
             )}
           </div>
 
