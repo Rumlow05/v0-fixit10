@@ -1549,52 +1549,109 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                 )}
               </div>
               <div className="space-y-4 max-h-60 overflow-y-auto">
-                {(selectedTicket.comments || []).length > 0 ? (
-                  (selectedTicket.comments || [])
-                    .slice()
-                    .reverse()
-                    .map((comment: any) => {
-                      // Manejar diferentes estructuras de comentarios
+                {(() => {
+                  // Crear historial combinado de comentarios y eventos del ticket
+                  const activities: any[] = []
+                  
+                  // Agregar evento de creación del ticket
+                  if (selectedTicket.created_at) {
+                    const creator = users.find(u => u.id === selectedTicket.requester_id)
+                    activities.push({
+                      id: `creation-${selectedTicket.id}`,
+                      type: 'creation',
+                      description: `Creó el ticket: "${selectedTicket.title}"`,
+                      author: creator?.name || 'Usuario',
+                      date: selectedTicket.created_at,
+                      icon: '📝'
+                    })
+                  }
+                  
+                  // Agregar evento de asignación si existe
+                  if (selectedTicket.assigned_to) {
+                    const assignee = users.find(u => u.id === selectedTicket.assigned_to)
+                    const assigner = users.find(u => u.id === selectedTicket.transferred_by) || users.find(u => u.id === selectedTicket.requester_id)
+                    activities.push({
+                      id: `assignment-${selectedTicket.id}`,
+                      type: 'assignment',
+                      description: `Asignado a ${assignee?.name || 'Usuario'}`,
+                      author: assigner?.name || 'Sistema',
+                      date: selectedTicket.updated_at || selectedTicket.created_at,
+                      icon: '👤'
+                    })
+                  }
+                  
+                  // Agregar evento de cambio de estado si no es el estado inicial
+                  if (selectedTicket.status && selectedTicket.status !== 'Abierto') {
+                    const statusChanger = users.find(u => u.id === selectedTicket.assigned_to) || users.find(u => u.id === selectedTicket.requester_id)
+                    activities.push({
+                      id: `status-${selectedTicket.id}`,
+                      type: 'status_change',
+                      description: `Estado cambiado a "${selectedTicket.status}"`,
+                      author: statusChanger?.name || 'Sistema',
+                      date: selectedTicket.updated_at || selectedTicket.created_at,
+                      icon: '🔄'
+                    })
+                  }
+                  
+                  // Agregar comentarios
+                  if (selectedTicket.comments && selectedTicket.comments.length > 0) {
+                    selectedTicket.comments.forEach((comment: any) => {
                       const commentText = comment.text || comment.content || comment.comment
                       const commentAuthor = comment.author || (comment.user ? comment.user.name : 'Usuario')
                       const commentDate = comment.timestamp || comment.created_at
                       
-                      console.log("[v0] Rendering comment:", {
+                      activities.push({
                         id: comment.id,
-                        text: commentText,
+                        type: 'comment',
+                        description: commentText,
                         author: commentAuthor,
                         date: commentDate,
-                        fullComment: comment
+                        icon: '💬'
                       })
-                      
-                      return (
-                        <div key={comment.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                          <p className="text-gray-800 mb-2">{commentText}</p>
-                          <div className="flex justify-between items-center text-xs text-gray-500">
-                            <span className="font-medium">{commentAuthor}</span>
-                            <span>{commentDate ? new Date(commentDate).toLocaleString() : 'Fecha no disponible'}</span>
+                    })
+                  }
+                  
+                  // Ordenar por fecha (más reciente primero)
+                  activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  
+                  return activities.length > 0 ? (
+                    activities.map((activity) => (
+                      <div key={activity.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <div className="flex items-start space-x-3">
+                          <span className="text-lg">{activity.icon}</span>
+                          <div className="flex-1">
+                            {activity.type === 'comment' ? (
+                              <p className="text-gray-800 mb-2">{activity.description}</p>
+                            ) : (
+                              <p className="text-gray-800 mb-2 font-medium">{activity.description}</p>
+                            )}
+                            <div className="flex justify-between items-center text-xs text-gray-500">
+                              <span className="font-medium">{activity.author}</span>
+                              <span>{activity.date ? new Date(activity.date).toLocaleString() : 'Fecha no disponible'}</span>
+                            </div>
                           </div>
                         </div>
-                      )
-                    })
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <svg
-                      className="w-12 h-12 mx-auto mb-3 text-gray-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                      />
-                    </svg>
-                    <p>No hay comentarios en este ticket</p>
-                  </div>
-                )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <svg
+                        className="w-12 h-12 mx-auto mb-3 text-gray-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                        />
+                      </svg>
+                      <p>No hay actividad registrada</p>
+                    </div>
+                  )
+                })()}
               </div>
             </div>
 
