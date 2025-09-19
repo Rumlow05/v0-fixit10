@@ -3114,6 +3114,17 @@ const App: React.FC = () => {
         await syncService.sendSyncEvent(createEvent)
         console.log("[v0] User creation event created")
         
+        // Enviar email de bienvenida al nuevo usuario
+        try {
+          await sendEmailNotification("welcome", {
+            userName: user.name
+          }, user.email)
+          console.log("[v0] Welcome email sent to:", user.email)
+        } catch (emailError) {
+          console.error("[v0] Error sending welcome email:", emailError)
+          // No mostrar error al usuario, solo logear
+        }
+        
         // Si se creó un usuario con un ID que estaba marcado como eliminado localmente, removerlo de la lista
         setLocallyDeletedUsers(prev => {
           const newSet = new Set(prev)
