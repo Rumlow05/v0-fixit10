@@ -57,13 +57,9 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
   console.log("[v0] Searching for user with email:", email)
 
-  const { data, error } = await supabase.from("users").select("*").eq("email", email).single()
+  const { data, error } = await supabase.from("users").select("*").eq("email", email).maybeSingle()
 
   if (error) {
-    if (error.code === "PGRST116") {
-      console.log("[v0] User not found with email:", email)
-      return null // User not found
-    }
     console.error("[v0] Error fetching user by email:", error)
     console.error("[v0] Error details:", {
       code: error.code,
@@ -71,6 +67,30 @@ export async function getUserByEmail(email: string): Promise<User | null> {
       details: error.details,
       hint: error.hint
     })
+    
+    // Si es un error de permisos (406), intentar con una consulta más simple
+    if (error.code === "PGRST301" || error.message?.includes("406")) {
+      console.log("[v0] Retrying with simpler query...")
+      try {
+        const { data: retryData, error: retryError } = await supabase
+          .from("users")
+          .select("id, name, email, role, created_at, updated_at")
+          .eq("email", email)
+          .maybeSingle()
+        
+        if (retryError) {
+          console.error("[v0] Retry also failed:", retryError)
+          throw new Error("Error al buscar usuario por email")
+        }
+        
+        console.log("[v0] User found with retry:", retryData)
+        return retryData
+      } catch (retryError) {
+        console.error("[v0] Retry exception:", retryError)
+        throw new Error("Error al buscar usuario por email")
+      }
+    }
+    
     throw new Error(`Error al buscar usuario por email: ${error.message}`)
   }
 
@@ -305,20 +325,58 @@ export const userServiceClient = {
   async getUserByEmail(email: string): Promise<User | null> {
     const supabase = createBrowserClient()
 
-    const { data, error } = await supabase.from("users").select("*").eq("email", email).single()
+    console.log("[v0] Client-side: Searching for user with email:", email)
+
+    const { data, error } = await supabase.from("users").select("*").eq("email", email).maybeSingle()
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return null // User not found
+      console.error("[v0] Client-side: Error fetching user by email:", error)
+      console.error("[v0] Client-side: Error details:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+      
+      // Si es un error de permisos (406), intentar con una consulta más simple
+      if (error.code === "PGRST301" || error.message?.includes("406")) {
+        console.log("[v0] Client-side: Retrying with simpler query...")
+        try {
+          const { data: retryData, error: retryError } = await supabase
+            .from("users")
+            .select("id, name, email, role, created_at, updated_at")
+            .eq("email", email)
+            .maybeSingle()
+          
+          if (retryError) {
+            console.error("[v0] Client-side: Retry also failed:", retryError)
+            throw new Error("Error al buscar usuario por email")
+          }
+          
+          if (!retryData) {
+            return null
+          }
+          
+          console.log("[v0] Client-side: User found with retry:", retryData)
+          return {
+            ...retryData,
+            role: getRoleEnumValue(retryData.role),
+          }
+        } catch (retryError) {
+          console.error("[v0] Client-side: Retry exception:", retryError)
+          throw new Error("Error al buscar usuario por email")
+        }
       }
-      console.error("[v0] Error fetching user by email:", error)
+      
       throw new Error("Error al buscar usuario por email")
     }
 
     if (!data) {
+      console.log("[v0] Client-side: User not found with email:", email)
       return null
     }
 
+    console.log("[v0] Client-side: User found:", data)
     return {
       ...data,
       role: getRoleEnumValue(data.role),
