@@ -2725,17 +2725,8 @@ const App: React.FC = () => {
   // --- Event Handlers ---
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    if (loginEmail === "tech@emprendetucarrera.com.co") {
-      // Buscar el usuario base en la base de datos
-      const baseUser = users.find((u: User) => u.email === "tech@emprendetucarrera.com.co")
-      if (baseUser) {
-        setShowRoleSelection(true)
-        setLoginError("")
-      } else {
-        setLoginError("Usuario administrador no encontrado en la base de datos.")
-      }
-      return
-    }
+    console.log("[v0] Attempting login with email:", loginEmail)
+    console.log("[v0] Available users:", users.map(u => ({ email: u.email, role: u.role })))
     
     // Verificar si el usuario fue eliminado recientemente
     if (typeof window !== 'undefined') {
@@ -2750,10 +2741,20 @@ const App: React.FC = () => {
     
     const user = users.find((u: User) => u.email === loginEmail)
     if (user) {
-      setCurrentUser(user)
-      setLoginError("")
+      console.log("[v0] User found:", { email: user.email, role: user.role, name: user.name })
+      
+      // Si es el usuario administrador especial, mostrar selección de rol
+      if (loginEmail === "tech@emprendetucarrera.com.co") {
+        setShowRoleSelection(true)
+        setLoginError("")
+      } else {
+        // Para cualquier otro usuario, hacer login directo
+        setCurrentUser(user)
+        setLoginError("")
+      }
     } else {
-      setLoginError("Correo electrónico no encontrado")
+      console.log("[v0] User not found in database")
+      setLoginError("Correo electrónico no encontrado en la base de datos.")
     }
   }
 
