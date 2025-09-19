@@ -1553,15 +1553,30 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                   (selectedTicket.comments || [])
                     .slice()
                     .reverse()
-                    .map((comment: any) => (
-                      <div key={comment.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                        <p className="text-gray-800 mb-2">{comment.text}</p>
-                        <div className="flex justify-between items-center text-xs text-gray-500">
-                          <span className="font-medium">{comment.author}</span>
-                          <span>{new Date(comment.timestamp).toLocaleString()}</span>
+                    .map((comment: any) => {
+                      // Manejar diferentes estructuras de comentarios
+                      const commentText = comment.text || comment.content || comment.comment
+                      const commentAuthor = comment.author || (comment.user ? comment.user.name : 'Usuario')
+                      const commentDate = comment.timestamp || comment.created_at
+                      
+                      console.log("[v0] Rendering comment:", {
+                        id: comment.id,
+                        text: commentText,
+                        author: commentAuthor,
+                        date: commentDate,
+                        fullComment: comment
+                      })
+                      
+                      return (
+                        <div key={comment.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                          <p className="text-gray-800 mb-2">{commentText}</p>
+                          <div className="flex justify-between items-center text-xs text-gray-500">
+                            <span className="font-medium">{commentAuthor}</span>
+                            <span>{commentDate ? new Date(commentDate).toLocaleString() : 'Fecha no disponible'}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      )
+                    })
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <svg

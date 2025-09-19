@@ -35,7 +35,7 @@ export async function getAllTickets(): Promise<Ticket[]> {
         *,
         assigned_user:assigned_to(name, email),
         creator:requester_id(name, email),
-      comments:comments(*, user:user_id(name, email))
+        comments:comments(*, user:user_id(name, email))
       `)
       .order("created_at", { ascending: false })
 
@@ -170,7 +170,7 @@ export const ticketServiceClient = {
           *,
           assigned_user:assigned_to(name, email),
           creator:requester_id(name, email),
-      comments:comments(*, user:user_id(name, email))
+          comments:comments(*, user:user_id(name, email))
         `)
         .order("created_at", { ascending: false })
 
