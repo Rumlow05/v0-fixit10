@@ -10,6 +10,9 @@ import { ticketServiceClient } from "./services/ticketService"
 import { syncService, createUserEvent, createTicketEvent } from "./services/syncService"
 import { useNotifications } from "./hooks/useNotifications"
 import NotificationContainer from "./components/NotificationContainer"
+import MobileHeader from "./components/MobileHeader"
+import MobileSidebar from "./components/MobileSidebar"
+import { useMobile } from "./hooks/useMobile"
 
 // --- SVG Icons ---
 const IconTickets = () => (
@@ -2432,6 +2435,10 @@ const App: React.FC = () => {
   
   // --- Notifications ---
   const { notifications, removeNotification, showSuccess, showError, showWarning, showInfo } = useNotifications()
+  
+  // --- Mobile ---
+  const isMobile = useMobile()
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
       const savedUser = localStorage.getItem("fixit_currentUser")
@@ -3609,8 +3616,29 @@ const App: React.FC = () => {
       )}
 
       {!showDatabaseSetup && (
-        <div className="h-screen bg-gray-50 flex overflow-hidden">
-          <Sidebar
+        <div className="h-screen bg-gray-50 flex flex-col md:flex-row overflow-hidden">
+          {/* Mobile Header */}
+          <MobileHeader
+            currentUser={currentUser}
+            onMenuClick={() => setIsMobileSidebarOpen(true)}
+            isSyncing={isSyncing}
+          />
+          
+          {/* Desktop Sidebar */}
+          <div className="hidden md:block">
+            <Sidebar
+              currentUser={currentUser}
+              currentView={currentView}
+              setCurrentView={(view: string) => setCurrentView(view as "users" | "tickets" | "resolved")}
+              onLogout={handleLogout}
+              setCreateTicketModalOpen={openCreateTicketModal}
+              setIsWhatsAppAdminOpen={setIsWhatsAppAdminOpen}
+              isSyncing={isSyncing}
+            />
+          </div>
+          
+          {/* Mobile Sidebar */}
+          <MobileSidebar
             currentUser={currentUser}
             currentView={currentView}
             setCurrentView={(view: string) => setCurrentView(view as "users" | "tickets" | "resolved")}
@@ -3618,8 +3646,13 @@ const App: React.FC = () => {
             setCreateTicketModalOpen={openCreateTicketModal}
             setIsWhatsAppAdminOpen={setIsWhatsAppAdminOpen}
             isSyncing={isSyncing}
+            isOpen={isMobileSidebarOpen}
+            onClose={() => setIsMobileSidebarOpen(false)}
           />
-          {currentView === "tickets" ? (
+          
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col overflow-hidden md:ml-0">
+            {currentView === "tickets" ? (
             <TicketsView
               tickets={tickets}
               users={users}
@@ -3664,6 +3697,7 @@ const App: React.FC = () => {
               editingUser={editingUser}
             />
           )}
+          </div>
 
           {/* Modals */}
           <TransferToLevel2Modal
