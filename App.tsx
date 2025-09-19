@@ -1476,7 +1476,10 @@ const TicketsView: React.FC<TicketsViewProps> = ({
 
       {/* Ticket Detail */}
       <div className={`col-span-4 overflow-y-auto bg-white ${isUserRole ? "border-r-0" : ""}`}>
-        {selectedTicket ? (
+        {(() => {
+          console.log("[v0] TicketsView - selectedTicket:", selectedTicket)
+          return selectedTicket
+        })() ? (
           <div className="p-6">
             <div className="mb-6">
               <div className="flex items-start justify-between mb-4">
