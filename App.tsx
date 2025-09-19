@@ -2866,20 +2866,22 @@ const App: React.FC = () => {
   }
 
   const handleSelectRole = (role: Role) => {
-    // Solo usar usuarios reales de la base de datos
-    let userToImpersonate = users.find((u: User) => u.role === role)
-
-    if (!userToImpersonate) {
-      // Si no hay usuario con ese rol, usar el usuario base tech@emprendetucarrera.com.co
-      userToImpersonate = users.find((u: User) => u.email === "tech@emprendetucarrera.com.co")
-      
-      if (!userToImpersonate) {
-        setLoginError("No se encontró el usuario administrador en la base de datos.")
-        return
-      }
-      
-      console.log("[v0] Using base admin user for role:", role)
+    // Siempre usar el usuario tech@emprendetucarrera.com.co pero con el rol seleccionado
+    const baseUser = users.find((u: User) => u.email === "tech@emprendetucarrera.com.co")
+    
+    if (!baseUser) {
+      setLoginError("No se encontró el usuario administrador en la base de datos.")
+      return
     }
+    
+    // Crear un usuario temporal con el rol seleccionado pero manteniendo la identidad original
+    const userToImpersonate: User = {
+      ...baseUser,
+      role: role, // Cambiar solo el rol, mantener email y otros datos
+    }
+    
+    console.log("[v0] Impersonating role:", role, "for user:", baseUser.email)
+    console.log("[v0] User data:", { email: userToImpersonate.email, role: userToImpersonate.role, name: userToImpersonate.name })
 
     setCurrentUser(userToImpersonate)
     setShowRoleSelection(false)
