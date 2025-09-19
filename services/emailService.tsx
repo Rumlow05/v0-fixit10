@@ -62,14 +62,14 @@ class EmailService {
     // Solo crear el transporter si las credenciales están disponibles
     if (process.env.HOSTINGER_EMAIL_USER && process.env.HOSTINGER_EMAIL_PASS) {
       this.transporter = nodemailer.createTransport({
-        host: "smtp.hostinger.com",
-        port: 465,
-        secure: true, // true for 465, false for other ports
-        auth: {
-          user: process.env.HOSTINGER_EMAIL_USER,
-          pass: process.env.HOSTINGER_EMAIL_PASS,
-        },
-      })
+      host: "smtp.hostinger.com",
+      port: 465,
+      secure: true, // true for 465, false for other ports
+      auth: {
+        user: process.env.HOSTINGER_EMAIL_USER,
+        pass: process.env.HOSTINGER_EMAIL_PASS,
+      },
+    })
     } else {
       // Crear un transporter mock para evitar errores durante el build
       this.transporter = null as any

@@ -80,8 +80,8 @@ export async function getUserByEmail(email: string): Promise<User | null> {
         
         if (retryError) {
           console.error("[v0] Retry also failed:", retryError)
-          throw new Error("Error al buscar usuario por email")
-        }
+    throw new Error("Error al buscar usuario por email")
+  }
         
         console.log("[v0] User found with retry:", retryData)
         return retryData
@@ -112,10 +112,10 @@ export async function createUser(userData: CreateUserData): Promise<User> {
   
   // Verificar si el usuario ya existe
   try {
-    const existingUser = await getUserByEmail(userData.email)
-    if (existingUser) {
+  const existingUser = await getUserByEmail(userData.email)
+  if (existingUser) {
       console.log("[v0] User already exists:", existingUser)
-      throw new Error("Ya existe un usuario con este email")
+    throw new Error("Ya existe un usuario con este email")
     }
   } catch (error) {
     // Si hay error al buscar, continuar con la creación
@@ -387,10 +387,10 @@ export const userServiceClient = {
     console.log("[v0] Client-side: Attempting to create user with data:", userData)
     
     try {
-      const existingUser = await this.getUserByEmail(userData.email)
-      if (existingUser) {
+    const existingUser = await this.getUserByEmail(userData.email)
+    if (existingUser) {
         console.log("[v0] Client-side: User already exists:", existingUser)
-        throw new Error("Ya existe un usuario con este email")
+      throw new Error("Ya existe un usuario con este email")
       }
     } catch (error) {
       console.warn("[v0] Client-side: Warning checking existing user:", error)

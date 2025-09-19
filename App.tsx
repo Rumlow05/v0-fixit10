@@ -1955,7 +1955,7 @@ const ResolvedTicketsView: React.FC<ResolvedTicketsViewProps> = ({ tickets, user
 
   const stats = getStatsByResponsible()
   const totalResolved = filteredTickets.length
-  const isUserRole = currentUser.role === Role.USER
+  const isUserRole = currentUser?.role === Role.USER
 
   return (
     <div className="p-6 h-full overflow-y-auto">
@@ -2489,9 +2489,9 @@ const App: React.FC = () => {
       } catch (error) {
         console.error("[v0] Error loading users:", error)
         if (
-          error?.message?.includes("Could not find the table") ||
-          error?.message?.includes("schema cache") ||
-          error?.code === "PGRST106"
+          (error as Error)?.message?.includes("Could not find the table") ||
+          (error as Error)?.message?.includes("schema cache") ||
+          (error as any)?.code === "PGRST106"
         ) {
           console.log("[v0] Database tables not found, showing setup screen")
           setShowDatabaseSetup(true)
@@ -2540,10 +2540,14 @@ const App: React.FC = () => {
   }, [currentUser])
 
   // Validar que el usuario actual siga existiendo en la base de datos
+  // Solo validar cuando cambie el usuario actual, no en cada sincronización
   useEffect(() => {
     const validateCurrentUser = async () => {
       if (currentUser && users.length > 0) {
         console.log("[v0] Validating current user session...")
+        console.log("[v0] Current user ID:", currentUser.id)
+        console.log("[v0] Current user email:", currentUser.email)
+        console.log("[v0] Available users count:", users.length)
         
         // Verificar si el usuario fue eliminado (marcado en localStorage)
         if (typeof window !== 'undefined') {
@@ -2567,7 +2571,8 @@ const App: React.FC = () => {
         
         if (!userExists) {
           console.log("[v0] Current user no longer exists in database, logging out...")
-          alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
+          console.log("[v0] Available users:", users.map(u => ({ id: u.id, email: u.email })))
+          showWarning("Sesión Expirada", "Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
           setCurrentUser(null)
           if (typeof window !== 'undefined') {
             localStorage.removeItem("fixit_currentUser")
@@ -2578,10 +2583,11 @@ const App: React.FC = () => {
       }
     }
 
+    // Solo validar cuando el usuario cambie o cuando se carguen los usuarios por primera vez
     if (databaseReady && users.length > 0) {
       validateCurrentUser()
     }
-  }, [currentUser, users, databaseReady])
+  }, [currentUser, databaseReady]) // Removido 'users' de las dependencias para evitar validaciones excesivas
 
   // Sincronización mejorada usando SyncService
   useEffect(() => {
@@ -2615,13 +2621,19 @@ const App: React.FC = () => {
         const currentUserExists = freshUsers.find(u => u.id === currentUser?.id && u.email === currentUser?.email)
         
         if (!currentUserExists) {
-          console.log("[v0] Current user no longer exists during sync, logging out...")
-          alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
-          setCurrentUser(null)
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem("fixit_currentUser")
-          }
-          return
+          console.log("[v0] WARNING: Current user no longer exists during sync!")
+          console.log("[v0] Current user being checked:", { id: currentUser?.id, email: currentUser?.email })
+          console.log("[v0] Available users in fresh data:", freshUsers.map(u => ({ id: u.id, email: u.email, name: u.name })))
+          console.log("[v0] This might be a temporary sync issue, not logging out automatically")
+          // No cerrar sesión automáticamente durante la sincronización para evitar cierres incorrectos
+          // showWarning("Sesión Expirada", "Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
+          // setCurrentUser(null)
+          // if (typeof window !== 'undefined') {
+          //   localStorage.removeItem("fixit_currentUser")
+          // }
+          // return
+        } else {
+          console.log("[v0] Current user confirmed in fresh data during sync")
         }
         
         // Verificar cambios en usuarios (no solo cantidad, sino contenido)
@@ -2659,7 +2671,7 @@ const App: React.FC = () => {
     }
 
     // Iniciar sincronización automática
-    syncService.startAutoSync(performSync, 3000) // Cada 3 segundos
+    syncService.startAutoSync(performSync, 10000) // Cada 10 segundos (menos agresivo)
 
     return () => {
       syncService.stopAutoSync()
@@ -3082,7 +3094,7 @@ const App: React.FC = () => {
         if (deletedUser) {
           const deleteEvent = createUserEvent('USER_DELETED', {
             ...deletedUser,
-            deletedBy: currentUser.email
+            deletedBy: currentUser?.email
           })
           await syncService.sendSyncEvent(deleteEvent)
           
@@ -3531,7 +3543,7 @@ const App: React.FC = () => {
               selectedTicket={selectedTicket}
               onSelectTicket={handleSelectTicket}
               onGenerateReport={handleGenerateReport}
-              setTransferModalOpen={openTransferModal}
+              setTransferModalOpen={setTransferModalOpen}
               solution={solution}
               isSuggesting={isSuggesting}
               report={report}
@@ -3540,11 +3552,11 @@ const App: React.FC = () => {
               onAssignTicket={handleAssignTicket}
               onResolveTicket={handleResolveTicket}
               onAddComment={handleAddComment}
-              onCreateTicketModalOpen={openCreateTicketModal}
+              onCreateTicketModalOpen={createTicketModalOpen}
               setCreateTicketModalOpen={setCreateTicketModalOpen}
-              onAssignTicketModalOpen={openAssignTicketModal}
+              onAssignTicketModalOpen={assignTicketModalOpen}
               setAssignTicketModalOpen={setAssignTicketModalOpen}
-              onAddCommentModalOpen={openAddCommentModal}
+              onAddCommentModalOpen={addCommentModalOpen}
               setAddCommentModalOpen={setAddCommentModalOpen}
               setPriorityModalOpen={setIsPriorityModalOpen}
               setResolutionModalOpen={setIsResolutionModalOpen}
