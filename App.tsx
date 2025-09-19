@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { type Ticket, type User, Role, Status, Priority } from "./types"
 import { suggestSolution, generateAdminReport } from "./services/geminiService"
 
@@ -2415,27 +2415,28 @@ const App: React.FC = () => {
     loadUsers()
   }, [])
 
-  useEffect(() => {
-    const loadTickets = async () => {
-      try {
-        setIsLoadingTickets(true)
-        console.log("[v0] Starting to load tickets...")
-        const fetchedTickets = await ticketServiceClient.getAllTickets()
-        console.log("[v0] Tickets loaded successfully:", fetchedTickets.length, "tickets")
-        console.log("[v0] All loaded tickets:", fetchedTickets)
-        setTickets(fetchedTickets)
-      } catch (error) {
-        console.error("[v0] Error loading tickets:", error)
-        // Keep empty array on error
-      } finally {
-        setIsLoadingTickets(false)
-      }
+  // Función para cargar tickets que puede ser reutilizada
+  const loadTickets = useCallback(async () => {
+    try {
+      setIsLoadingTickets(true)
+      console.log("[v0] Starting to load tickets...")
+      const fetchedTickets = await ticketServiceClient.getAllTickets()
+      console.log("[v0] Tickets loaded successfully:", fetchedTickets.length, "tickets")
+      console.log("[v0] All loaded tickets:", fetchedTickets)
+      setTickets(fetchedTickets)
+    } catch (error) {
+      console.error("[v0] Error loading tickets:", error)
+      // Keep empty array on error
+    } finally {
+      setIsLoadingTickets(false)
     }
+  }, [])
 
+  useEffect(() => {
     if (databaseReady) {
       loadTickets()
     }
-  }, [databaseReady])
+  }, [databaseReady, loadTickets])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
