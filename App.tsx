@@ -2757,6 +2757,18 @@ const App: React.FC = () => {
           )
           console.log("[v0] Locally deleted users (preventing restoration):", Array.from(locallyDeletedUsers))
           
+          // Limpiar usuarios recreados de la lista de eliminados
+          if (typeof window !== 'undefined') {
+            const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
+            const freshUserEmails = freshUsers.map(u => u.email)
+            const updatedDeletedUsers = deletedUsers.filter((du: any) => !freshUserEmails.includes(du.email))
+            
+            if (updatedDeletedUsers.length !== deletedUsers.length) {
+              localStorage.setItem('fixit_deletedUsers', JSON.stringify(updatedDeletedUsers))
+              console.log("[v0] Cleaned recreated users from deleted users list")
+            }
+          }
+          
           // Solo actualizar si hay cambios reales (no solo usuarios eliminados localmente)
           if (JSON.stringify(filteredFreshUsers) !== JSON.stringify(users)) {
             setUsers(filteredFreshUsers)
@@ -2835,18 +2847,34 @@ const App: React.FC = () => {
     console.log("[v0] Attempting login with email:", loginEmail)
     console.log("[v0] Available users:", users.map(u => ({ email: u.email, role: u.role })))
     
-    // Verificar si el usuario fue eliminado recientemente
-    if (typeof window !== 'undefined') {
-      const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
-      const isDeleted = deletedUsers.find((du: any) => du.email === loginEmail)
-      
-      if (isDeleted) {
-        setLoginError("Este usuario ha sido eliminado del sistema.")
-        return
+    // Verificar si el usuario existe en la base de datos actual
+    const user = users.find((u: User) => u.email === loginEmail)
+    
+    // Si el usuario existe en la base de datos, permitir login (incluso si estaba en lista de eliminados)
+    if (user) {
+      // Limpiar entrada de usuario eliminado si existe (usuario fue recreado)
+      if (typeof window !== 'undefined') {
+        const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
+        const wasDeleted = deletedUsers.find((du: any) => du.email === loginEmail)
+        
+        if (wasDeleted) {
+          console.log("[v0] User was recreated, removing from deleted users list")
+          const updatedDeletedUsers = deletedUsers.filter((du: any) => du.email !== loginEmail)
+          localStorage.setItem('fixit_deletedUsers', JSON.stringify(updatedDeletedUsers))
+        }
+      }
+    } else {
+      // Si el usuario no existe en la base de datos, verificar si fue eliminado
+      if (typeof window !== 'undefined') {
+        const deletedUsers = JSON.parse(localStorage.getItem('fixit_deletedUsers') || '[]')
+        const isDeleted = deletedUsers.find((du: any) => du.email === loginEmail)
+        
+        if (isDeleted) {
+          setLoginError("Este usuario ha sido eliminado del sistema.")
+          return
+        }
       }
     }
-    
-    const user = users.find((u: User) => u.email === loginEmail)
     if (user) {
       console.log("[v0] User found:", { email: user.email, role: user.role, name: user.name })
       
