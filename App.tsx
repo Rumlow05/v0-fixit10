@@ -3196,7 +3196,7 @@ const App: React.FC = () => {
           console.log("[v0] User deletion event created for cross-device sync")
         }
         
-        showSuccess("Usuario Eliminado", "Usuario eliminado exitosamente. Las sesiones activas de este usuario serán invalidadas en todos los dispositivos.")
+        showSuccess("Usuario Eliminado", "Usuario eliminado exitosamente")
       } catch (error) {
         console.error("[v0] Error deleting user:", error)
         showError("Error", "Error al eliminar usuario. Por favor intenta de nuevo.")
