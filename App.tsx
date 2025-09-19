@@ -8,6 +8,8 @@ import { suggestSolution, generateAdminReport } from "./services/geminiService"
 import { userServiceClient } from "./services/userService"
 import { ticketServiceClient } from "./services/ticketService"
 import { syncService, createUserEvent, createTicketEvent } from "./services/syncService"
+import { useNotifications } from "./hooks/useNotifications"
+import NotificationContainer from "./components/NotificationContainer"
 
 // --- SVG Icons ---
 const IconTickets = () => (
@@ -2269,6 +2271,9 @@ const App: React.FC = () => {
   // --- State Management ---
   const [users, setUsers] = useState<User[]>([])
   const [tickets, setTickets] = useState<Ticket[]>([])
+  
+  // --- Notifications ---
+  const { notifications, removeNotification, showSuccess, showError, showWarning, showInfo } = useNotifications()
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
       const savedUser = localStorage.getItem("fixit_currentUser")
@@ -2461,7 +2466,7 @@ const App: React.FC = () => {
           
           if (isDeleted) {
             console.log("[v0] Current user was deleted, logging out...")
-            alert("Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
+            showWarning("Sesión Expirada", "Tu sesión ha expirado. El usuario ha sido eliminado del sistema.")
             setCurrentUser(null)
             localStorage.removeItem("fixit_currentUser")
             // Limpiar la entrada de usuario eliminado
@@ -2954,7 +2959,7 @@ const App: React.FC = () => {
       // Check if it's a validation error (like duplicate email)
       if (errorMessage.includes("Ya existe un usuario") || errorMessage.includes("duplicate")) {
         console.log("[v0] Validation error (not a system error):", errorMessage)
-        alert("⚠️ " + errorMessage)
+        showWarning("Validación", errorMessage)
       } else {
         // This is a real system error
         console.error("[v0] System error saving user:", error)
@@ -2963,14 +2968,14 @@ const App: React.FC = () => {
           stack: error.stack,
           userData: userData,
         })
-        alert("❌ Error del sistema al guardar usuario: " + errorMessage)
+        showError("Error del Sistema", "Error al guardar usuario: " + errorMessage)
       }
     }
   }
 
   const handleDeleteUser = async (userId: string) => {
     if (currentUser?.id === userId) {
-      alert("No puedes eliminar al usuario con el que has iniciado sesión.")
+      showWarning("Acción No Permitida", "No puedes eliminar al usuario con el que has iniciado sesión.")
       return
     }
     if (window.confirm("¿Estás seguro de que quieres eliminar a este usuario?")) {
@@ -3009,10 +3014,10 @@ const App: React.FC = () => {
           console.log("[v0] User deletion event created for cross-device sync")
         }
         
-        alert("Usuario eliminado exitosamente. Las sesiones activas de este usuario serán invalidadas en todos los dispositivos.")
+        showSuccess("Usuario Eliminado", "Usuario eliminado exitosamente. Las sesiones activas de este usuario serán invalidadas en todos los dispositivos.")
       } catch (error) {
         console.error("[v0] Error deleting user:", error)
-        alert("Error al eliminar usuario. Por favor intenta de nuevo.")
+        showError("Error", "Error al eliminar usuario. Por favor intenta de nuevo.")
       }
     }
   }
@@ -3053,7 +3058,7 @@ const App: React.FC = () => {
       }, currentUser.email)
     } catch (error) {
       console.error("[v0] Error creating ticket:", error)
-      alert("Error al crear ticket. Por favor intenta de nuevo.")
+      showError("Error", "Error al crear ticket. Por favor intenta de nuevo.")
     }
   }
 
@@ -3074,7 +3079,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("[v0] Error updating ticket:", error)
-      alert("Error al actualizar ticket. Por favor intenta de nuevo.")
+      showError("Error", "Error al actualizar ticket. Por favor intenta de nuevo.")
     }
   }
 
@@ -3088,7 +3093,7 @@ const App: React.FC = () => {
         }
       } catch (error) {
         console.error("[v0] Error deleting ticket:", error)
-        alert("Error al eliminar ticket. Por favor intenta de nuevo.")
+        showError("Error", "Error al eliminar ticket. Por favor intenta de nuevo.")
       }
     }
   }
@@ -3123,7 +3128,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("[v0] Error assigning ticket:", error)
-      alert("Error al asignar ticket. Por favor intenta de nuevo.")
+      showError("Error", "Error al asignar ticket. Por favor intenta de nuevo.")
     }
   }
 
@@ -3155,7 +3160,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("[v0] Error resolving ticket:", error)
-      alert("Error al resolver ticket. Por favor intenta de nuevo.")
+      showError("Error", "Error al resolver ticket. Por favor intenta de nuevo.")
     }
   }
 
@@ -3183,7 +3188,7 @@ const App: React.FC = () => {
       closeAddCommentModal()
     } catch (error) {
       console.error("[v0] Error adding comment:", error)
-      alert("Error al agregar comentario. Por favor intenta de nuevo.")
+      showError("Error", "Error al agregar comentario. Por favor intenta de nuevo.")
     }
   }
 
@@ -3227,7 +3232,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("[v0] Error transferring ticket:", error)
-      alert("Error al transferir ticket. Por favor intenta de nuevo.")
+      showError("Error", "Error al transferir ticket. Por favor intenta de nuevo.")
     }
   }
 
@@ -3267,7 +3272,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("[v0] Error changing priority:", error)
-      alert("Error al cambiar la prioridad. Por favor intenta de nuevo.")
+      showError("Error", "Error al cambiar la prioridad. Por favor intenta de nuevo.")
     }
   }
 
@@ -3310,7 +3315,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("[v0] Error resolving ticket with message:", error)
-      alert("Error al resolver el ticket. Por favor intenta de nuevo.")
+      showError("Error", "Error al resolver el ticket. Por favor intenta de nuevo.")
     }
   }
 
@@ -3354,7 +3359,7 @@ const App: React.FC = () => {
       
     } catch (error) {
       console.error("[v0] Error deleting ticket with message:", error)
-      alert("Error al eliminar el ticket. Por favor intenta de nuevo.")
+      showError("Error", "Error al eliminar el ticket. Por favor intenta de nuevo.")
     }
   }
 
@@ -3532,6 +3537,12 @@ const App: React.FC = () => {
           />
         </div>
       )}
+      
+      {/* Sistema de Notificaciones */}
+      <NotificationContainer
+        notifications={notifications}
+        onRemoveNotification={removeNotification}
+      />
     </>
   )
 }
