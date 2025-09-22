@@ -1327,6 +1327,27 @@ const TicketsView: React.FC<TicketsViewProps> = ({
   const canAddComment = true // Todos los usuarios pueden agregar comentarios
   const canCreate = true
 
+  // Formateadores de fecha/hora en zona horaria de Colombia (America/Bogota)
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString("es-CO", {
+      timeZone: "America/Bogota",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    })
+  }
+
+  const formatOnlyDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("es-CO", {
+      timeZone: "America/Bogota",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    })
+  }
+
   // Filtrar tickets: usuarios ven todos sus tickets, otros roles ven solo activos
   const filteredTickets = isUserRole 
     ? tickets.filter((t) => t && t.requester_id === currentUser?.id) // Usuarios ven TODOS sus tickets
@@ -1538,11 +1559,11 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-600">Creado:</span>{" "}
-                    <span className="font-medium">{new Date(selectedTicket.created_at).toLocaleDateString()}</span>
+                    <span className="font-medium">{formatOnlyDate(selectedTicket.created_at)}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Actualizado:</span>{" "}
-                    <span className="font-medium">{new Date(selectedTicket.updated_at).toLocaleDateString()}</span>
+                    <span className="font-medium">{formatOnlyDate(selectedTicket.updated_at)}</span>
                   </div>
                 </div>
               </div>
@@ -1639,7 +1660,7 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                             )}
                             <div className="flex justify-between items-center text-xs text-gray-500">
                               <span className="font-medium">{activity.author}</span>
-                              <span>{activity.date ? new Date(activity.date).toLocaleString() : 'Fecha no disponible'}</span>
+                              <span>{activity.date ? formatDate(activity.date) : 'Fecha no disponible'}</span>
                             </div>
                           </div>
                         </div>
@@ -2037,13 +2058,25 @@ const ResolvedTicketsView: React.FC<ResolvedTicketsViewProps> = ({ tickets, user
     }
   }
 
+  // Formateador de fecha/hora en zona horaria de Colombia
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("es-ES", {
+    return new Date(dateString).toLocaleString("es-CO", {
+      timeZone: "America/Bogota",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit"
+    })
+  }
+
+  // Formateador solo de fecha en zona horaria de Colombia
+  const formatOnlyDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("es-CO", {
+      timeZone: "America/Bogota",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
     })
   }
 
