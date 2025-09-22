@@ -14,6 +14,7 @@ export interface User {
 export interface CreateUserData {
   email: string
   name: string
+  phone?: string
   role: Role
 }
 
@@ -137,6 +138,7 @@ export async function createUser(userData: CreateUserData): Promise<User> {
   const dbUserData = {
     email: userData.email,
     name: userData.name,
+    phone: userData.phone || null,
     role: getRoleDbValue(userData.role),
   }
 
@@ -421,6 +423,7 @@ export const userServiceClient = {
     const dbUserData = {
       email: userData.email,
       name: userData.name,
+      phone: userData.phone || null,
       role: getRoleDbValue(userData.role),
     }
 

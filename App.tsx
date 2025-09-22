@@ -233,13 +233,14 @@ const UserManagementModal = ({
   onSave,
   user,
 }: { isOpen: boolean; onClose: () => void; onSave: (user: User) => void; user: User | null }) => {
-  const [formData, setFormData] = useState({ id: "", name: "", email: "", role: Role.USER })
+  const [formData, setFormData] = useState({ id: "", name: "", email: "", phone: "", role: Role.USER })
 
   useEffect(() => {
     setFormData({
       id: user?.id || "",
       name: user?.name || "",
       email: user?.email || "",
+      phone: user?.phone || "",
       role: user?.role || Role.USER,
     })
   }, [user, isOpen])
@@ -301,6 +302,20 @@ const UserManagementModal = ({
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+              Número de Teléfono
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+              placeholder="Ej: +57 300 123 4567"
             />
           </div>
           <div>
@@ -1917,6 +1932,7 @@ const UserManagementView: React.FC<UserManagementViewProps> = ({
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Acciones
@@ -1928,6 +1944,7 @@ const UserManagementView: React.FC<UserManagementViewProps> = ({
             <tr key={user.id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phone || 'No especificado'}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role}</td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                 <button onClick={() => onOpenUserModal(user)} className="text-primary-600 hover:text-primary-900">
@@ -3171,6 +3188,7 @@ const App: React.FC = () => {
   interface CreateUserData {
     name: string
     email: string
+    phone?: string
     role: Role
   }
 
