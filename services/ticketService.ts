@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createBrowserClient } from "@/lib/supabase/client"
 import { Ticket, Priority, Status } from "@/types"
+import { getColombiaTimestamp } from "@/utils/colombiaTime"
 
 // Re-export types from types.ts
 export { Ticket, Priority, Status }
@@ -103,7 +104,7 @@ export async function updateTicket(id: string, ticketData: UpdateTicketData): Pr
   if (ticketData.status === "resuelto") {
     ticketData = {
       ...ticketData,
-      resolved_at: new Date().toISOString(),
+      resolved_at: getColombiaTimestamp(),
     }
   }
 
@@ -215,7 +216,7 @@ export const ticketServiceClient = {
     if (ticketData.status === "resuelto") {
       ticketData = {
         ...ticketData,
-        resolved_at: new Date().toISOString(),
+        resolved_at: getColombiaTimestamp(),
       }
     }
 

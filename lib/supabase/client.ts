@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { getColombiaTimestamp } from '@/utils/colombiaTime'
 
 interface MockSupabaseClient {
   from: (table: string) => {
@@ -209,8 +210,8 @@ function createMockClient(): MockSupabaseClient {
                 ...newItem,
                 status: newItem.status || "Abierto",
                 priority: newItem.priority || "Media",
-                created_at: newItem.created_at || new Date().toISOString(),
-                updated_at: newItem.updated_at || new Date().toISOString(),
+                created_at: newItem.created_at || getColombiaTimestamp(),
+                updated_at: newItem.updated_at || getColombiaTimestamp(),
                 comments: newItem.comments || [],
               }
               tickets.push(ticketWithDefaults)

@@ -11,6 +11,34 @@ import { syncService, createUserEvent, createTicketEvent } from "./services/sync
 import { useNotifications } from "./hooks/useNotifications"
 import NotificationContainer from "./components/NotificationContainer"
 
+// --- Funciones de formateo de fecha/hora para Colombia ---
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleString("es-CO", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  })
+}
+
+const formatOnlyDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("es-CO", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  })
+}
+
+const getColombiaTimestampLocal = () => {
+  const now = new Date()
+  // Convertir a zona horaria de Colombia y luego a ISO string
+  const colombiaTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Bogota" }))
+  return colombiaTime.toISOString()
+}
+
 // --- SVG Icons ---
 const IconTickets = () => (
   <svg
@@ -1327,26 +1355,6 @@ const TicketsView: React.FC<TicketsViewProps> = ({
   const canAddComment = true // Todos los usuarios pueden agregar comentarios
   const canCreate = true
 
-  // Formateadores de fecha/hora en zona horaria de Colombia (America/Bogota)
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("es-CO", {
-      timeZone: "America/Bogota",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
-    })
-  }
-
-  const formatOnlyDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-CO", {
-      timeZone: "America/Bogota",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    })
-  }
 
   // Filtrar tickets: usuarios ven todos sus tickets, otros roles ven solo activos
   const filteredTickets = isUserRole 
@@ -2058,27 +2066,6 @@ const ResolvedTicketsView: React.FC<ResolvedTicketsViewProps> = ({ tickets, user
     }
   }
 
-  // Formateador de fecha/hora en zona horaria de Colombia
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("es-CO", {
-      timeZone: "America/Bogota",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
-    })
-  }
-
-  // Formateador solo de fecha en zona horaria de Colombia
-  const formatOnlyDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-CO", {
-      timeZone: "America/Bogota",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    })
-  }
 
   const handleResponsibleClick = (responsible: {name: string, id: string, role: string}) => {
     console.log("[v0] handleResponsibleClick - Responsible clicked:", responsible)
@@ -3287,7 +3274,7 @@ const App: React.FC = () => {
             deletedUsers.push({
               id: userId,
               email: deletedUser.email,
-              deletedAt: new Date().toISOString()
+              deletedAt: getColombiaTimestampLocal()
             })
             localStorage.setItem('fixit_deletedUsers', JSON.stringify(deletedUsers))
           }
@@ -3453,7 +3440,7 @@ const App: React.FC = () => {
         id: Date.now(),
         author: currentUser.name,
         text: commentText,
-        timestamp: new Date().toISOString(),
+        timestamp: getColombiaTimestampLocal(),
       }
 
       // Crear comentario en la tabla comments

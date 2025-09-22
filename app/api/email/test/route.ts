@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { emailService } from "../../../../services/emailService"
+import { getColombiaTimestamp } from "@/utils/colombiaTime"
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
       priority: "Media",
       status: "Abierto",
       createdBy: "Sistema FixIT",
-      createdAt: new Date().toISOString(),
+      createdAt: getColombiaTimestamp(),
     }
 
     const success = await emailService.sendTicketCreatedNotification(testTicketData, email)
