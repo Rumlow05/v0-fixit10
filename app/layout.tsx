@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: 'FixIT',
   description: 'Sistema de gestión de tickets y soporte técnico',
   generator: 'v0.app',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({
