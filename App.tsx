@@ -1321,7 +1321,8 @@ const TicketsView: React.FC<TicketsViewProps> = ({
     id ? users.find((u: User) => u.id === id)?.name || "Desconocido" : "Sin Asignar"
   const isUserRole = currentUser?.role === Role.USER
   const canUseAI = currentUser ? [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role) : false
-  const canAssign = currentUser?.role === Role.ADMIN
+  // Permitir que Nivel 1, Nivel 2 y Admin puedan asignar tickets
+  const canAssign = currentUser ? [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role) : false
   const canResolve = currentUser ? [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role) : false
   const canAddComment = true // Todos los usuarios pueden agregar comentarios
   const canCreate = true
@@ -3622,7 +3623,8 @@ const App: React.FC = () => {
   }
 
   const level2Users = users.filter((u) => u.role === Role.LEVEL_2)
-  const assignableUsers = users.filter((u) => [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(u.role))
+  // Solo técnicos: Nivel 1 y Nivel 2 (se incluye el propio usuario si es técnico)
+  const assignableUsers = users.filter((u) => [Role.LEVEL_1, Role.LEVEL_2].includes(u.role))
 
   if (!currentUser) {
     return (
