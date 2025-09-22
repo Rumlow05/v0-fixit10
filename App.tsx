@@ -3623,8 +3623,10 @@ const App: React.FC = () => {
   }
 
   const level2Users = users.filter((u) => u.role === Role.LEVEL_2)
-  // Solo técnicos: Nivel 1 y Nivel 2 (se incluye el propio usuario si es técnico)
-  const assignableUsers = users.filter((u) => [Role.LEVEL_1, Role.LEVEL_2].includes(u.role))
+  // Solo técnicos: Nivel 1 y Nivel 2. Si el usuario actual es ADMIN, permitir asignarse a sí mismo
+  const assignableUsers = users.filter(
+    (u) => [Role.LEVEL_1, Role.LEVEL_2].includes(u.role) || (currentUser?.role === Role.ADMIN && u.id === currentUser.id)
+  )
 
   if (!currentUser) {
     return (
