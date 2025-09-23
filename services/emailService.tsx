@@ -316,7 +316,7 @@ class EmailService {
                 <p style="font-size: 16px; margin-bottom: 20px;">Tu cuenta ha sido creada exitosamente en el sistema FixIT.</p>
                 <p style="font-size: 16px; margin-bottom: 25px;">Ahora puedes acceder a la plataforma y comenzar a gestionar tickets de soporte de manera eficiente.</p>
                 
-                <a href="https://v0-fixit10.vercel.app" class="access-button">
+                <a href="https://dashboard.emprendetucarrera.com.co/" class="access-button">
                   🚀 Acceder a FixIT
                 </a>
               </div>
@@ -331,7 +331,7 @@ class EmailService {
               <div class="instructions">
                 <h3>📋 Cómo Acceder a la Plataforma:</h3>
                 <ol>
-                  <li><strong>Haz clic en el botón "Acceder a FixIT"</strong> de arriba, o visita: <a href="https://v0-fixit10.vercel.app" style="color: #10b981;">https://v0-fixit10.vercel.app</a></li>
+                  <li><strong>Haz clic en el botón "Acceder a FixIT"</strong> de arriba, o visita: <a href="https://dashboard.emprendetucarrera.com.co/" style="color: #10b981;">https://dashboard.emprendetucarrera.com.co/</a></li>
                   <li><strong>Ingresa tu email:</strong> ${userEmail}</li>
                   <li><strong>Ingresa tu contraseña</strong> (la misma que usaste para registrarte)</li>
                   <li><strong>Haz clic en "Iniciar Sesión"</strong></li>
