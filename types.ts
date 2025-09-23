@@ -34,6 +34,18 @@ export interface Comment {
   timestamp: string;
 }
 
+export interface Attachment {
+  id: string;
+  ticket_id: string;
+  filename: string;
+  original_name: string;
+  file_size: number;
+  file_type: string;
+  file_path: string;
+  uploaded_by: string;
+  created_at: string;
+}
+
 export interface Ticket {
   id: string;
   title: string;
@@ -47,6 +59,7 @@ export interface Ticket {
   created_at: string;
   updated_at: string;
   comments: Comment[];
+  attachments?: Attachment[]; // Archivos adjuntos del ticket
 }
 
 export interface Notification {

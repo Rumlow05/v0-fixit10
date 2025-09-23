@@ -7,9 +7,11 @@ import { suggestSolution, generateAdminReport } from "./services/geminiService"
 
 import { userServiceClient } from "./services/userService"
 import { ticketServiceClient } from "./services/ticketService"
+import { attachmentServiceClient } from "./services/attachmentService"
 import { syncService, createUserEvent, createTicketEvent } from "./services/syncService"
 import { useNotifications } from "./hooks/useNotifications"
 import NotificationContainer from "./components/NotificationContainer"
+import AttachmentViewer from "./components/AttachmentViewer"
 
 // --- Funciones de formateo de fecha/hora para Colombia ---
 const formatDate = (dateString: string) => {
@@ -1330,6 +1332,8 @@ interface TicketsViewProps {
   setAddCommentModalOpen: (open: boolean) => void
   setResolutionModalOpen: (open: boolean) => void
   setDeleteModalOpen: (open: boolean) => void
+  isAttachmentViewerOpen: boolean
+  setAttachmentViewerOpen: (open: boolean) => void
 }
 
 const TicketsView: React.FC<TicketsViewProps> = ({
@@ -1357,6 +1361,8 @@ const TicketsView: React.FC<TicketsViewProps> = ({
   setAddCommentModalOpen,
   setResolutionModalOpen,
   setDeleteModalOpen,
+  isAttachmentViewerOpen,
+  setAttachmentViewerOpen,
 }) => {
   const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(false)
   
@@ -1714,6 +1720,14 @@ const TicketsView: React.FC<TicketsViewProps> = ({
             <div className="mt-6 border-t border-gray-200 pt-6">
               <h4 className="font-semibold text-gray-900 mb-4">Acciones Disponibles</h4>
               <div className="flex flex-wrap gap-3">
+                {/* Botón para ver archivos adjuntos */}
+                <button
+                  onClick={() => setAttachmentViewerOpen(true)}
+                  className="px-6 py-3 text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  📎 Ver Archivos
+                </button>
+
                 {canAssign && (
                   <button
                     onClick={() => setAssignTicketModalOpen(true)}
@@ -2560,6 +2574,7 @@ const App: React.FC = () => {
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isWhatsAppAdminOpen, setIsWhatsAppAdminOpen] = useState(false)
+  const [isAttachmentViewerOpen, setIsAttachmentViewerOpen] = useState(false)
   const [whatsappQR, setWhatsappQR] = useState<string | null>(null)
   const [whatsappStatus, setWhatsappStatus] = useState<{isConnected: boolean, needsQR: boolean}>({isConnected: false, needsQR: false})
   const [isSyncing, setIsSyncing] = useState(false)
@@ -3324,6 +3339,25 @@ const App: React.FC = () => {
       const newTicket = await ticketServiceClient.createTicket(ticketToCreate)
       console.log("[v0] handleCreateTicket - Created ticket:", newTicket)
 
+      // Procesar archivos adjuntos si existen
+      if (ticketData.attachments && ticketData.attachments.length > 0) {
+        console.log("[v0] handleCreateTicket - Processing attachments:", ticketData.attachments.length)
+        
+        for (const file of ticketData.attachments) {
+          try {
+            await attachmentServiceClient.uploadAttachment({
+              file: file,
+              ticket_id: newTicket.id,
+              uploaded_by: currentUser.id
+            })
+            console.log("[v0] handleCreateTicket - Attachment uploaded:", file.name)
+          } catch (attachmentError) {
+            console.error("[v0] handleCreateTicket - Error uploading attachment:", attachmentError)
+            // No fallar la creación del ticket si hay error con un attachment
+          }
+        }
+      }
+
       setTickets([newTicket, ...tickets])
       closeCreateTicketModal() // Use the proper function name
 
@@ -3756,6 +3790,8 @@ const App: React.FC = () => {
                 setPriorityModalOpen={setIsPriorityModalOpen}
                 setResolutionModalOpen={setIsResolutionModalOpen}
                 setDeleteModalOpen={setIsDeleteModalOpen}
+                isAttachmentViewerOpen={isAttachmentViewerOpen}
+                setAttachmentViewerOpen={setIsAttachmentViewerOpen}
               />
             ) : currentView === "resolved" ? (
               <ResolvedTicketsView
@@ -3828,6 +3864,12 @@ const App: React.FC = () => {
             status={whatsappStatus}
             onConnect={handleWhatsAppConnect}
             onDisconnect={handleWhatsAppDisconnect}
+          />
+          <AttachmentViewer
+            isOpen={isAttachmentViewerOpen}
+            onClose={() => setIsAttachmentViewerOpen(false)}
+            ticketId={selectedTicket?.id || ""}
+            currentUser={currentUser}
           />
         </div>
       )}
