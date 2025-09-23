@@ -3327,6 +3327,9 @@ const App: React.FC = () => {
     if (!currentUser) return
 
     try {
+      console.log("[v0] handleCreateTicket - Datos recibidos:", ticketData)
+      console.log("[v0] handleCreateTicket - Attachments recibidos:", ticketData.attachments)
+      
       const ticketToCreate = {
         title: ticketData.title,
         description: ticketData.description,
@@ -3342,6 +3345,7 @@ const App: React.FC = () => {
       // Procesar archivos adjuntos si existen
       if (ticketData.attachments && ticketData.attachments.length > 0) {
         console.log("[v0] handleCreateTicket - Processing attachments:", ticketData.attachments.length)
+        console.log("[v0] handleCreateTicket - Attachment files:", ticketData.attachments)
         
         for (const file of ticketData.attachments) {
           try {
