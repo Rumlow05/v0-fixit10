@@ -76,19 +76,52 @@ export class AttachmentService {
   }
 
   /**
-   * Elimina un attachment
+   * Elimina un attachment de Vercel Blob y base de datos
    */
   static async deleteAttachment(attachmentId: string): Promise<void> {
     try {
       console.log(`[AttachmentService] Eliminando attachment: ${attachmentId}`)
       
+      // Primero obtener el attachment para conseguir la URL de Vercel Blob
+      const { data: attachment, error: fetchError } = await supabase
+        .from('attachments')
+        .select('file_path')
+        .eq('id', attachmentId)
+        .single()
+
+      if (fetchError) {
+        console.error('[AttachmentService] Error obteniendo attachment:', fetchError)
+        throw fetchError
+      }
+
+      // Eliminar de Vercel Blob
+      try {
+        const deleteResponse = await fetch('/api/delete-blob', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url: attachment.file_path }),
+        })
+
+        if (!deleteResponse.ok) {
+          console.warn('[AttachmentService] Error eliminando archivo de Vercel Blob, continuando...')
+        } else {
+          console.log('[AttachmentService] Archivo eliminado de Vercel Blob exitosamente')
+        }
+      } catch (blobError) {
+        console.warn('[AttachmentService] Error eliminando de Vercel Blob:', blobError)
+        // Continuar con la eliminación de la base de datos
+      }
+
+      // Eliminar de base de datos
       const { error } = await supabase
         .from('attachments')
         .delete()
         .eq('id', attachmentId)
 
       if (error) {
-        console.error('[AttachmentService] Error eliminando attachment:', error)
+        console.error('[AttachmentService] Error eliminando attachment de BD:', error)
         throw error
       }
 
@@ -100,44 +133,50 @@ export class AttachmentService {
   }
 
   /**
-   * Convierte un archivo a base64 para almacenamiento temporal
-   * En un entorno de producción, esto debería subirse a un servicio de almacenamiento como AWS S3
+   * Sube un archivo a Vercel Blob Storage
    */
-  static async uploadFileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const result = reader.result as string
-        resolve(result)
+  static async uploadFileToBlob(file: File, ticketId: string): Promise<{url: string, pathname: string, size: number}> {
+    try {
+      console.log(`[AttachmentService] Subiendo archivo a Vercel Blob: ${file.name}`)
+      
+      const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}&ticketId=${ticketId}`, {
+        method: 'POST',
+        body: file,
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error subiendo archivo')
       }
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
+      
+      const blobData = await response.json()
+      console.log(`[AttachmentService] Archivo subido a Vercel Blob:`, blobData)
+      
+      return blobData
+    } catch (error) {
+      console.error('[AttachmentService] Error subiendo archivo a Vercel Blob:', error)
+      throw error
+    }
   }
 
   /**
-   * Procesa y guarda un archivo adjunto
+   * Procesa y guarda un archivo adjunto usando Vercel Blob
    */
   static async uploadAttachment(uploadData: UploadFileData): Promise<Attachment> {
     try {
       console.log('[AttachmentService] Subiendo archivo:', uploadData.file.name)
       
-      // Generar nombre único para el archivo
-      const timestamp = Date.now()
-      const fileExtension = uploadData.file.name.split('.').pop()
-      const uniqueFilename = `${timestamp}_${uploadData.file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      
-      // Convertir archivo a base64 (en producción usar servicio de almacenamiento)
-      const fileBase64 = await this.uploadFileToBase64(uploadData.file)
+      // Subir archivo a Vercel Blob
+      const blobData = await this.uploadFileToBlob(uploadData.file, uploadData.ticket_id)
       
       // Crear datos del attachment
       const attachmentData: CreateAttachmentData = {
         ticket_id: uploadData.ticket_id,
-        filename: uniqueFilename,
+        filename: blobData.pathname, // Nombre del archivo en Vercel Blob
         original_name: uploadData.file.name,
         file_size: uploadData.file.size,
         file_type: uploadData.file.type,
-        file_path: fileBase64, // En producción sería la URL del archivo en el servicio de almacenamiento
+        file_path: blobData.url, // URL de Vercel Blob
         uploaded_by: uploadData.uploaded_by
       }
 
@@ -153,10 +192,10 @@ export class AttachmentService {
   }
 
   /**
-   * Obtiene la URL de descarga de un archivo
+   * Obtiene la URL de descarga de un archivo desde Vercel Blob
    */
   static getFileDownloadUrl(attachment: Attachment): string {
-    // En producción, esto sería la URL del servicio de almacenamiento
+    // Retorna la URL directa de Vercel Blob
     return attachment.file_path
   }
 
