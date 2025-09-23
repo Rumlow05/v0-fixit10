@@ -168,9 +168,16 @@ export class AttachmentService {
   static async uploadAttachment(uploadData: UploadFileData): Promise<Attachment> {
     try {
       console.log('[AttachmentService] Subiendo archivo:', uploadData.file.name)
+      console.log('[AttachmentService] Datos de upload:', {
+        ticket_id: uploadData.ticket_id,
+        uploaded_by: uploadData.uploaded_by,
+        file_size: uploadData.file.size,
+        file_type: uploadData.file.type
+      })
       
       // Subir archivo a Vercel Blob
       const blobData = await this.uploadFileToBlob(uploadData.file, uploadData.ticket_id)
+      console.log('[AttachmentService] Blob data recibida:', blobData)
       
       // Crear datos del attachment
       const attachmentData: CreateAttachmentData = {
@@ -184,6 +191,7 @@ export class AttachmentService {
       }
 
       // Guardar en base de datos
+      console.log('[AttachmentService] Creando attachment en BD con datos:', attachmentData)
       const attachment = await this.createAttachment(attachmentData)
       
       console.log('[AttachmentService] Archivo subido exitosamente:', attachment)
