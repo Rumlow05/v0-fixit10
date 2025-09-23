@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase/client'
+import { createBrowserClient } from '../lib/supabase/client'
 import { Attachment } from '../types'
 
 // Interfaz para crear un nuevo attachment
@@ -30,6 +30,7 @@ export class AttachmentService {
     try {
       console.log(`[AttachmentService] Obteniendo attachments para ticket: ${ticketId}`)
       
+      const supabase = createBrowserClient()
       const { data, error } = await supabase
         .from('attachments')
         .select('*')
@@ -56,6 +57,7 @@ export class AttachmentService {
     try {
       console.log('[AttachmentService] Creando attachment:', attachmentData)
       
+      const supabase = createBrowserClient()
       const { data, error } = await supabase
         .from('attachments')
         .insert([attachmentData])
@@ -83,6 +85,7 @@ export class AttachmentService {
       console.log(`[AttachmentService] Eliminando attachment: ${attachmentId}`)
       
       // Primero obtener el attachment para conseguir la URL de Vercel Blob
+      const supabase = createBrowserClient()
       const { data: attachment, error: fetchError } = await supabase
         .from('attachments')
         .select('file_path')
