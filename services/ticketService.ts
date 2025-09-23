@@ -36,7 +36,8 @@ export async function getAllTickets(): Promise<Ticket[]> {
         *,
         assigned_user:assigned_to(name, email),
         creator:requester_id(name, email),
-        comments:comments(*, user:user_id(name, email))
+        comments:comments(*, user:user_id(name, email)),
+        attachments:attachments(*)
       `)
       .order("created_at", { ascending: false })
 
@@ -60,7 +61,8 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
     .select(`
       *,
       assigned_user:assigned_to(name, email),
-      creator:requester_id(name, email)
+      creator:requester_id(name, email),
+      attachments:attachments(*)
     `)
     .eq("id", id)
     .single()
@@ -85,7 +87,8 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
     .select(`
       *,
       assigned_user:assigned_to(name, email),
-      creator:requester_id(name, email)
+      creator:requester_id(name, email),
+      attachments:attachments(*)
     `)
     .single()
 
@@ -171,7 +174,8 @@ export const ticketServiceClient = {
           *,
           assigned_user:assigned_to(name, email),
           creator:requester_id(name, email),
-          comments:comments(*, user:user_id(name, email))
+          comments:comments(*, user:user_id(name, email)),
+          attachments:attachments(*)
         `)
         .order("created_at", { ascending: false })
 
@@ -197,7 +201,8 @@ export const ticketServiceClient = {
         *,
         assigned_user:assigned_to(name, email),
         creator:requester_id(name, email),
-      comments:comments(*, user:user_id(name, email))
+        comments:comments(*, user:user_id(name, email)),
+        attachments:attachments(*)
       `)
       .single()
 
