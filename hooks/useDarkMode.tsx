@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useContext, createContext, ReactNode } from 'react'
 
 // Tipos para el contexto
