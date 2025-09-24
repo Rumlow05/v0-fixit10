@@ -12,6 +12,7 @@ import { syncService, createUserEvent, createTicketEvent } from "./services/sync
 import { useNotifications } from "./hooks/useNotifications"
 import NotificationContainer from "./components/NotificationContainer"
 // import AttachmentViewer from "./components/AttachmentViewer" // DESHABILITADO TEMPORALMENTE
+import { activityService, createActivityEvents } from "./services/activityService"
 
 // --- Funciones de formateo de fecha/hora para Colombia ---
 const formatDate = (dateString: string) => {
@@ -1614,76 +1615,34 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                 )}
               </div>
               <div className="space-y-4 max-h-60 overflow-y-auto">
-                {(() => {
-                  // Crear historial combinado de comentarios y eventos del ticket
-                  const activities: any[] = []
-                  
-                  // Agregar evento de creación del ticket
-                  if (selectedTicket.created_at) {
-                    const creator = users.find(u => u.id === selectedTicket.requester_id)
-                    activities.push({
-                      id: `creation-${selectedTicket.id}`,
-                      type: 'creation',
-                      description: `Creó el ticket: "${selectedTicket.title}"`,
-                      author: creator?.name || 'Usuario',
-                      date: selectedTicket.created_at,
-                      icon: '📝'
-                    })
-                  }
-                  
-                  // Agregar evento de asignación si existe
-                  if (selectedTicket.assigned_to) {
-                    const assignee = users.find(u => u.id === selectedTicket.assigned_to)
-                    const assigner = users.find(u => u.id === selectedTicket.transferred_by) || users.find(u => u.id === selectedTicket.requester_id)
-                    activities.push({
-                      id: `assignment-${selectedTicket.id}`,
-                      type: 'assignment',
-                      description: `Asignado a ${assignee?.name || 'Usuario'}`,
-                      author: assigner?.name || 'Sistema',
-                      date: selectedTicket.updated_at || selectedTicket.created_at,
-                      icon: '👤'
-                    })
-                  }
-                  
-                  // Agregar evento de cambio de estado si no es el estado inicial
-                  if (selectedTicket.status && selectedTicket.status !== 'Abierto') {
-                    const statusChanger = users.find(u => u.id === selectedTicket.assigned_to) || users.find(u => u.id === selectedTicket.requester_id)
-                    activities.push({
-                      id: `status-${selectedTicket.id}`,
-                      type: 'status_change',
-                      description: `Estado cambiado a "${selectedTicket.status}"`,
-                      author: statusChanger?.name || 'Sistema',
-                      date: selectedTicket.updated_at || selectedTicket.created_at,
-                      icon: '🔄'
-                    })
-                  }
-                  
-                  // Agregar comentarios
-                  if (selectedTicket.comments && selectedTicket.comments.length > 0) {
-                    selectedTicket.comments.forEach((comment: any) => {
-                      const commentText = comment.text || comment.content || comment.comment
-                      const commentAuthor = comment.author || (comment.user ? comment.user.name : 'Usuario')
-                      const commentDate = comment.timestamp || comment.created_at
-                      
-                      activities.push({
-                        id: comment.id,
-                        type: 'comment',
-                        description: commentText,
-                        author: commentAuthor,
-                        date: commentDate,
-                        icon: '💬'
-                      })
-                    })
-                  }
-                  
-                  // Ordenar por fecha (más reciente primero)
-                  activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                  
-                  return activities.length > 0 ? (
-                    activities.map((activity) => (
+                {ticketActivities.length > 0 ? (
+                  ticketActivities.map((activity) => {
+                    // Determinar el ícono según el tipo de actividad
+                    let icon = '📝'
+                    switch (activity.type) {
+                      case 'creation':
+                        icon = '📝'
+                        break
+                      case 'assignment':
+                        icon = '👤'
+                        break
+                      case 'status_change':
+                        icon = '🔄'
+                        break
+                      case 'comment':
+                        icon = '💬'
+                        break
+                      case 'transfer':
+                        icon = '🔄'
+                        break
+                      default:
+                        icon = '📝'
+                    }
+                    
+                    return (
                       <div key={activity.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                         <div className="flex items-start space-x-3">
-                          <span className="text-lg">{activity.icon}</span>
+                          <span className="text-lg">{icon}</span>
                           <div className="flex-1">
                             {activity.type === 'comment' ? (
                               <p className="text-gray-800 mb-2">{activity.description}</p>
@@ -1691,32 +1650,32 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                               <p className="text-gray-800 mb-2 font-medium">{activity.description}</p>
                             )}
                             <div className="flex justify-between items-center text-xs text-gray-500">
-                              <span className="font-medium">{activity.author}</span>
-                              <span>{activity.date ? formatDate(activity.date) : 'Fecha no disponible'}</span>
+                              <span className="font-medium">{activity.user_name || 'Usuario'}</span>
+                              <span>{activity.created_at ? formatDate(activity.created_at) : 'Fecha no disponible'}</span>
                             </div>
                           </div>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <svg
-                        className="w-12 h-12 mx-auto mb-3 text-gray-300"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                        />
-                      </svg>
-                      <p>No hay actividad registrada</p>
-                    </div>
-                  )
-                })()}
+                    )
+                  })
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <svg
+                      className="w-12 h-12 mx-auto mb-3 text-gray-300"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
+                    </svg>
+                    <p>No hay actividad registrada</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2584,6 +2543,7 @@ const App: React.FC = () => {
   const [whatsappStatus, setWhatsappStatus] = useState<{isConnected: boolean, needsQR: boolean}>({isConnected: false, needsQR: false})
   const [isSyncing, setIsSyncing] = useState(false)
   const [locallyDeletedUsers, setLocallyDeletedUsers] = useState<Set<string>>(new Set())
+  const [ticketActivities, setTicketActivities] = useState<any[]>([])
 
   // Limpiar entradas antiguas de usuarios eliminados y asegurar consistencia
   useEffect(() => {
@@ -2688,6 +2648,19 @@ const App: React.FC = () => {
     }
   }, [])
 
+  // Función para cargar actividades de un ticket
+  const loadTicketActivities = useCallback(async (ticketId: string) => {
+    try {
+      console.log("[v0] Loading activities for ticket:", ticketId)
+      const activities = await activityService.getActivityByTicket(ticketId)
+      console.log("[v0] Fetched activities:", activities)
+      setTicketActivities(activities)
+    } catch (error) {
+      console.error("[v0] Error loading activities:", error)
+      setTicketActivities([])
+    }
+  }, [])
+
   useEffect(() => {
     if (databaseReady) {
       loadTickets()
@@ -2703,6 +2676,15 @@ const App: React.FC = () => {
       }
     }
   }, [currentUser])
+
+  // Cargar actividades cuando se selecciona un ticket
+  useEffect(() => {
+    if (selectedTicket?.id) {
+      loadTicketActivities(selectedTicket.id)
+    } else {
+      setTicketActivities([])
+    }
+  }, [selectedTicket?.id, loadTicketActivities])
 
   // Validar que el usuario actual siga existiendo en la base de datos
   // Solo validar cuando cambie el usuario actual, no en cada sincronización
@@ -3347,6 +3329,20 @@ const App: React.FC = () => {
       const newTicket = await ticketServiceClient.createTicket(ticketToCreate)
       console.log("[v0] handleCreateTicket - Created ticket:", newTicket)
 
+      // Registrar actividad de creación
+      try {
+        const creationActivity = createActivityEvents.creation(
+          newTicket.id,
+          currentUser.id,
+          newTicket.title
+        )
+        await activityService.createActivity(creationActivity)
+        console.log("[v0] handleCreateTicket - Creation activity registered")
+      } catch (activityError) {
+        console.error("[v0] handleCreateTicket - Error creating activity:", activityError)
+        // No fallar la creación del ticket si hay error con la actividad
+      }
+
       // Procesar archivos adjuntos - DESHABILITADO TEMPORALMENTE
       /*
       if (ticketData.attachments && ticketData.attachments.length > 0) {
@@ -3435,6 +3431,23 @@ const App: React.FC = () => {
     try {
       console.log("[v0] handleAssignTicket - Assigning ticket:", selectedTicket.id, "to user:", assigneeId)
       await handleUpdateTicket(selectedTicket.id, { assigned_to: assigneeId })
+      
+      // Registrar actividad de asignación
+      try {
+        const assignee = users.find((u: User) => u.id === assigneeId)
+        const assignmentActivity = createActivityEvents.assignment(
+          selectedTicket.id,
+          currentUser?.id || '',
+          assigneeId,
+          assignee?.name || 'Usuario'
+        )
+        await activityService.createActivity(assignmentActivity)
+        console.log("[v0] handleAssignTicket - Assignment activity registered")
+      } catch (activityError) {
+        console.error("[v0] handleAssignTicket - Error creating activity:", activityError)
+        // No fallar la asignación si hay error con la actividad
+      }
+      
       console.log("[v0] handleAssignTicket - Assignment completed, closing modal")
       closeAssignTicketModal()
 
@@ -3514,8 +3527,23 @@ const App: React.FC = () => {
         content: commentText
       })
       
-      // Refrescar la vista de tickets
+      // Registrar actividad de comentario
+      try {
+        const commentActivity = createActivityEvents.comment(
+          selectedTicket.id,
+          currentUser.id,
+          commentText
+        )
+        await activityService.createActivity(commentActivity)
+        console.log("[v0] handleAddComment - Comment activity registered")
+      } catch (activityError) {
+        console.error("[v0] handleAddComment - Error creating activity:", activityError)
+        // No fallar el comentario si hay error con la actividad
+      }
+      
+      // Refrescar la vista de tickets y actividades
       await loadTickets()
+      await loadTicketActivities(selectedTicket.id)
       closeAddCommentModal()
     } catch (error) {
       console.error("[v0] Error adding comment:", error)
@@ -3571,13 +3599,29 @@ const App: React.FC = () => {
     if (!selectedTicket) return
 
     try {
+      const oldPriority = selectedTicket.priority
       await handleUpdateTicket(selectedTicket.id, {
         priority: newPriority,
       })
       
+      // Registrar actividad de cambio de prioridad
+      try {
+        const priorityActivity = createActivityEvents.statusChange(
+          selectedTicket.id,
+          currentUser?.id || '',
+          oldPriority,
+          newPriority
+        )
+        await activityService.createActivity(priorityActivity)
+        console.log("[v0] handleChangePriority - Priority change activity registered")
+      } catch (activityError) {
+        console.error("[v0] handleChangePriority - Error creating activity:", activityError)
+        // No fallar el cambio si hay error con la actividad
+      }
+      
       // Agregar comentario automático sobre el cambio de prioridad
       await handleAddComment(
-        `Prioridad cambiada de "${selectedTicket.priority}" a "${newPriority}"`
+        `Prioridad cambiada de "${oldPriority}" a "${newPriority}"`
       )
       
       setIsPriorityModalOpen(false)
@@ -3611,8 +3655,24 @@ const App: React.FC = () => {
     if (!selectedTicket) return
 
     try {
+      const oldStatus = selectedTicket.status
       // Actualizar el ticket a resuelto
       await handleUpdateTicket(selectedTicket.id, { status: Status.RESOLVED })
+      
+      // Registrar actividad de cambio de estado
+      try {
+        const statusActivity = createActivityEvents.statusChange(
+          selectedTicket.id,
+          currentUser?.id || '',
+          oldStatus,
+          Status.RESOLVED
+        )
+        await activityService.createActivity(statusActivity)
+        console.log("[v0] handleResolveWithMessage - Status change activity registered")
+      } catch (activityError) {
+        console.error("[v0] handleResolveWithMessage - Error creating activity:", activityError)
+        // No fallar la resolución si hay error con la actividad
+      }
       
       // Crear mensaje de resolución
       const resolutionStatus = wasResolved ? "✅ RESUELTO" : "❌ NO RESUELTO"
