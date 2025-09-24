@@ -1,5 +1,0 @@
-{
-  "name": "FixIT",
-  "description": "Un sistema de tickets intuitivo y potenciado por IA para los departamentos de TI y Desarrollo. Simplifica la creación, gestión y seguimiento de tickets con acceso basado en roles y proporciona métricas detalladas para los administradores.",
-  "requestFramePermissions": []
-}
