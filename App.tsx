@@ -2088,8 +2088,8 @@ const ResolvedTicketsView: React.FC<ResolvedTicketsViewProps> = ({ tickets, user
   return (
     <div className="p-6 h-full overflow-y-auto">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Tickets Resueltos</h2>
-        <p className="text-gray-600">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Tickets Resueltos</h2>
+        <p className="text-gray-600 dark:text-gray-400">
           {isUserRole 
             ? "Visualiza tus tickets resueltos y cerrados" 
             : "Visualiza y analiza los tickets resueltos por responsable y período"
@@ -2098,19 +2098,19 @@ const ResolvedTicketsView: React.FC<ResolvedTicketsViewProps> = ({ tickets, user
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtros</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filtros</h3>
         <div className={`grid grid-cols-1 gap-4 ${isUserRole ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
           {!isUserRole && (
             <div>
-              <label htmlFor="responsible" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="responsible" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Responsable
               </label>
               <select
                 id="responsible"
                 value={selectedResponsible}
                 onChange={(e) => setSelectedResponsible(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="all">Todos los responsables</option>
                 {users
@@ -2124,19 +2124,19 @@ const ResolvedTicketsView: React.FC<ResolvedTicketsViewProps> = ({ tickets, user
             </div>
           )}
           <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha Inicio
-            </label>
-            <input
-              type="date"
-              id="startDate"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-            />
+              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Fecha Inicio
+              </label>
+              <input
+                type="date"
+                id="startDate"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
           </div>
           <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Fecha Fin
             </label>
             <input
@@ -2144,7 +2144,7 @@ const ResolvedTicketsView: React.FC<ResolvedTicketsViewProps> = ({ tickets, user
               id="endDate"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
         </div>
@@ -2155,7 +2155,7 @@ const ResolvedTicketsView: React.FC<ResolvedTicketsViewProps> = ({ tickets, user
               setStartDate("")
               setEndDate("")
             }}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
           >
             Limpiar Filtros
           </button>
@@ -2164,37 +2164,37 @@ const ResolvedTicketsView: React.FC<ResolvedTicketsViewProps> = ({ tickets, user
 
       {/* Estadísticas */}
       <div className={`grid grid-cols-1 gap-4 mb-6 ${isUserRole ? 'md:grid-cols-2 lg:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 {isUserRole ? "Mis Tickets Resueltos" : "Total Resueltos"}
               </p>
-              <p className="text-2xl font-semibold text-gray-900">{totalResolved}</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{totalResolved}</p>
             </div>
           </div>
         </div>
         
         {!isUserRole && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Responsables Activos</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.length}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Responsables Activos</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.length}</p>
               </div>
             </div>
           </div>
