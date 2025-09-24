@@ -1514,13 +1514,13 @@ const TicketsView: React.FC<TicketsViewProps> = ({
               onClick={() => onSelectTicket(ticket)}
               className={`p-4 md:p-5 m-2 md:m-3 rounded-2xl cursor-pointer transition-all duration-300 border ${
                 selectedTicket?.id === ticket.id
-                  ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-emerald-300 shadow-lg shadow-emerald-500/10"
-                  : "bg-white/90 backdrop-blur-sm border-gray-200/60 hover:border-gray-300 hover:shadow-lg hover:bg-white"
+                  ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-800/20 border-emerald-300 dark:border-emerald-600 shadow-lg shadow-emerald-500/10"
+                  : "bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg hover:bg-white dark:hover:bg-gray-700"
               }`}
             >
               <div className="flex justify-between items-start mb-3">
-                <h3 className="font-bold text-gray-900 text-sm md:text-base leading-tight pr-2">{ticket.title}</h3>
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-lg font-mono">#{ticket.id.slice(0, 8)}</span>
+                <h3 className="font-bold text-gray-900 dark:text-white text-sm md:text-base leading-tight pr-2">{ticket.title}</h3>
+                <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg font-mono">#{ticket.id.slice(0, 8)}</span>
               </div>
               <div className="flex gap-2 mb-3">
                 <span
@@ -1533,7 +1533,7 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                 </span>
               </div>
               {!isUserRole && (
-                <p className="text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+                <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
                   <span className="font-medium">Solicitante:</span> {getUserName(ticket.requester_id)}
                 </p>
               )}
@@ -1544,13 +1544,13 @@ const TicketsView: React.FC<TicketsViewProps> = ({
       </div>
 
       {/* Ticket Detail */}
-      <div className={`col-span-4 overflow-y-auto bg-white/95 backdrop-blur-sm shadow-sm ${isUserRole ? "border-r-0" : ""}`}>
+      <div className={`col-span-4 overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm ${isUserRole ? "border-r-0" : ""}`}>
         {selectedTicket ? (
           <div className="p-6">
             <div className="mb-6">
               <div className="flex items-start justify-between mb-4">
-                <h2 className="text-3xl font-bold text-gray-900 leading-tight">{selectedTicket.title}</h2>
-                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">#{selectedTicket.id}</span>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white leading-tight">{selectedTicket.title}</h2>
+                <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">#{selectedTicket.id}</span>
               </div>
               <div className="flex gap-3 mb-6">
                 <span
@@ -1569,21 +1569,21 @@ const TicketsView: React.FC<TicketsViewProps> = ({
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-xl p-6 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Descripción</h3>
-              <p className="text-gray-700 leading-relaxed">{selectedTicket.description}</p>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 mb-6">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Descripción</h3>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{selectedTicket.description}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-6 mb-6">
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <h4 className="font-semibold text-gray-900 mb-2">Información del Ticket</h4>
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Información del Ticket</h4>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-gray-600">Solicitante:</span>{" "}
+                    <span className="text-gray-600 dark:text-gray-400">Solicitante:</span>{" "}
                     <span className="font-medium">{getUserName(selectedTicket.requester_id)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Asignado a:</span>{" "}
+                    <span className="text-gray-600 dark:text-gray-400">Asignado a:</span>{" "}
                     <span className="font-medium">
                       {selectedTicket.assigned_to ? 
                         `${getUserName(selectedTicket.assigned_to)} (${users.find(u => u.id === selectedTicket.assigned_to)?.role || 'Desconocido'})` 
@@ -1593,15 +1593,15 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                   </div>
                 </div>
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <h4 className="font-semibold text-gray-900 mb-2">Fechas</h4>
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Fechas</h4>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-gray-600">Creado:</span>{" "}
+                    <span className="text-gray-600 dark:text-gray-400">Creado:</span>{" "}
                     <span className="font-medium">{formatOnlyDate(selectedTicket.created_at)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Actualizado:</span>{" "}
+                    <span className="text-gray-600 dark:text-gray-400">Actualizado:</span>{" "}
                     <span className="font-medium">{formatOnlyDate(selectedTicket.updated_at)}</span>
                   </div>
                 </div>
