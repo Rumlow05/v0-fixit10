@@ -1444,14 +1444,14 @@ const TicketsView: React.FC<TicketsViewProps> = ({
   return (
     <div className={`flex-1 grid ${isUserRole ? "grid-cols-7" : (isAIAssistantVisible ? "grid-cols-10" : "grid-cols-7")} h-full overflow-hidden bg-gradient-to-br from-gray-50/80 to-white/60 backdrop-blur-sm`}>
       {/* Ticket List */}
-      <div className="col-span-3 bg-white/95 backdrop-blur-sm border-r border-gray-200/60 overflow-y-auto shadow-sm">
-        <div className="p-4 md:p-6 border-b border-gray-200/60 bg-white/90 backdrop-blur-sm sticky top-0 z-10">
+      <div className="col-span-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200/60 dark:border-gray-700/60 overflow-y-auto shadow-sm">
+        <div className="p-4 md:p-6 border-b border-gray-200/60 dark:border-gray-700/60 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm sticky top-0 z-10">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">
                 {isUserRole ? "Mis Solicitudes" : "Todos los Tickets"}
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {isUserRole ? "Gestiona tus solicitudes de soporte" : "Administra todos los tickets del sistema"}
               </p>
             </div>
@@ -1480,28 +1480,28 @@ const TicketsView: React.FC<TicketsViewProps> = ({
           </div>
 
           <div className={`grid gap-3 ${isUserRole ? 'grid-cols-2' : 'grid-cols-2'}`}>
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100/80 p-4 md:p-5 rounded-2xl border border-blue-200/60 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="text-2xl md:text-3xl font-bold text-blue-800">{stats.total}</div>
-              <div className="text-sm text-blue-600 font-semibold">Total</div>
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100/80 dark:from-blue-900/20 dark:to-blue-800/20 p-4 md:p-5 rounded-2xl border border-blue-200/60 dark:border-blue-700/60 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="text-2xl md:text-3xl font-bold text-blue-800 dark:text-blue-300">{stats.total}</div>
+              <div className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Total</div>
             </div>
-            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/80 p-4 md:p-5 rounded-2xl border border-emerald-200/60 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="text-2xl md:text-3xl font-bold text-emerald-800">{stats.open}</div>
-              <div className="text-sm text-emerald-600 font-semibold">Abiertos</div>
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/80 dark:from-emerald-900/20 dark:to-emerald-800/20 p-4 md:p-5 rounded-2xl border border-emerald-200/60 dark:border-emerald-700/60 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="text-2xl md:text-3xl font-bold text-emerald-800 dark:text-emerald-300">{stats.open}</div>
+              <div className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">Abiertos</div>
             </div>
-            <div className="bg-gradient-to-br from-amber-50 to-amber-100/80 p-4 md:p-5 rounded-2xl border border-amber-200/60 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="text-2xl md:text-3xl font-bold text-amber-800">{stats.inProgress}</div>
-              <div className="text-sm text-amber-600 font-semibold">En Progreso</div>
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100/80 dark:from-amber-900/20 dark:to-amber-800/20 p-4 md:p-5 rounded-2xl border border-amber-200/60 dark:border-amber-700/60 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="text-2xl md:text-3xl font-bold text-amber-800 dark:text-amber-300">{stats.inProgress}</div>
+              <div className="text-sm text-amber-600 dark:text-amber-400 font-semibold">En Progreso</div>
             </div>
             {isUserRole && (
-              <div className="bg-gradient-to-br from-green-50 to-green-100/80 p-4 md:p-5 rounded-2xl border border-green-200/60 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="text-2xl md:text-3xl font-bold text-green-800">{stats.resolved}</div>
-                <div className="text-sm text-green-600 font-semibold">Resueltos</div>
+              <div className="bg-gradient-to-br from-green-50 to-green-100/80 dark:from-green-900/20 dark:to-green-800/20 p-4 md:p-5 rounded-2xl border border-green-200/60 dark:border-green-700/60 shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="text-2xl md:text-3xl font-bold text-green-800 dark:text-green-300">{stats.resolved}</div>
+                <div className="text-sm text-green-600 dark:text-green-400 font-semibold">Resueltos</div>
               </div>
             )}
             {!isUserRole && (
-              <div className="bg-gradient-to-br from-red-50 to-red-100/80 p-4 md:p-5 rounded-2xl border border-red-200/60 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="text-2xl md:text-3xl font-bold text-red-800">{stats.high}</div>
-                <div className="text-sm text-red-600 font-semibold">Alta Prioridad</div>
+              <div className="bg-gradient-to-br from-red-50 to-red-100/80 dark:from-red-900/20 dark:to-red-800/20 p-4 md:p-5 rounded-2xl border border-red-200/60 dark:border-red-700/60 shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="text-2xl md:text-3xl font-bold text-red-800 dark:text-red-300">{stats.high}</div>
+                <div className="text-sm text-red-600 dark:text-red-400 font-semibold">Alta Prioridad</div>
               </div>
             )}
           </div>
