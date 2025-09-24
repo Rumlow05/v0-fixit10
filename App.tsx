@@ -1899,7 +1899,7 @@ const UserManagementView: React.FC<UserManagementViewProps> = ({
 }) => (
   <div className="flex-1 p-6 overflow-y-auto">
     <div className="flex justify-between items-center mb-6">
-      <h2 className="text-2xl font-bold text-gray-800">Gestionar Usuarios</h2>
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Gestionar Usuarios</h2>
       <button
         onClick={() => onOpenUserModal()}
         className="px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors duration-200 flex items-center gap-2"
@@ -1910,31 +1910,31 @@ const UserManagementView: React.FC<UserManagementViewProps> = ({
         Crear Nuevo Usuario
       </button>
     </div>
-    <div className="bg-white shadow rounded-lg">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nombre</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Correo</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Teléfono</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rol</th>
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
               Acciones
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {(users || []).map((user) => (
             <tr key={user.id}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phone || 'No especificado'}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{user.name}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{user.email}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{user.phone || 'No especificado'}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{user.role}</td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                <button onClick={() => onOpenUserModal(user)} className="text-primary-600 hover:text-primary-900">
+                <button onClick={() => onOpenUserModal(user)} className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">
                   Editar
                 </button>
-                <button onClick={() => onDeleteUser(user.id)} className="text-red-600 hover:text-red-900">
+                <button onClick={() => onDeleteUser(user.id)} className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
                   Eliminar
                 </button>
               </td>
