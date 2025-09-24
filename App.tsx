@@ -1338,6 +1338,7 @@ interface TicketsViewProps {
   setDeleteModalOpen: (open: boolean) => void
   isAttachmentViewerOpen: boolean
   setAttachmentViewerOpen: (open: boolean) => void
+  ticketActivities: any[]
 }
 
 const TicketsView: React.FC<TicketsViewProps> = ({
@@ -1367,6 +1368,7 @@ const TicketsView: React.FC<TicketsViewProps> = ({
   setDeleteModalOpen,
   isAttachmentViewerOpen,
   setAttachmentViewerOpen,
+  ticketActivities,
 }) => {
   const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(false)
   
@@ -3863,6 +3865,7 @@ const App: React.FC = () => {
                 setDeleteModalOpen={setIsDeleteModalOpen}
                 isAttachmentViewerOpen={isAttachmentViewerOpen}
                 setAttachmentViewerOpen={setIsAttachmentViewerOpen}
+                ticketActivities={ticketActivities}
               />
             ) : currentView === "resolved" ? (
               <ResolvedTicketsView
