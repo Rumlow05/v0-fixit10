@@ -1608,9 +1608,9 @@ const TicketsView: React.FC<TicketsViewProps> = ({
               </div>
             </div>
 
-            <div className="border border-gray-200 rounded-xl p-6">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 bg-white dark:bg-gray-800">
               <div className="flex justify-between items-center mb-4">
-                <h4 className="text-lg font-semibold text-gray-900">Historial de Actividad</h4>
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Historial de Actividad</h4>
                 {canAddComment && (
                   <button
                     onClick={() => setAddCommentModalOpen(true)}
@@ -1646,16 +1646,16 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                     }
                     
                     return (
-                      <div key={activity.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <div key={activity.id} className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
                         <div className="flex items-start space-x-3">
                           <span className="text-lg">{icon}</span>
                           <div className="flex-1">
                             {activity.type === 'comment' ? (
-                              <p className="text-gray-800 mb-2">{activity.description}</p>
+                              <p className="text-gray-800 dark:text-gray-200 mb-2">{activity.description}</p>
                             ) : (
-                              <p className="text-gray-800 mb-2 font-medium">{activity.description}</p>
+                              <p className="text-gray-800 dark:text-gray-200 mb-2 font-medium">{activity.description}</p>
                             )}
-                            <div className="flex justify-between items-center text-xs text-gray-500">
+                            <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
                               <span className="font-medium">{activity.user_name || 'Usuario'}</span>
                               <span>{activity.created_at ? formatDate(activity.created_at) : 'Fecha no disponible'}</span>
                             </div>
