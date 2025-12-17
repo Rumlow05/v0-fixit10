@@ -13,6 +13,9 @@ export interface CreateTicketData {
   category: string
   assigned_to?: string
   requester_id: string
+  origin?: 'Interna' | 'Externa'
+  external_company?: string
+  external_contact?: string
 }
 
 export interface UpdateTicketData {

@@ -56,6 +56,9 @@ export interface Ticket {
   status: Status;
   priority: Priority;
   category: string;
+  origin?: 'Interna' | 'Externa'; // Origen del ticket
+  external_company?: string; // Nombre del aliado externo
+  external_contact?: string; // Nombre del contacto externo
   created_at: string;
   updated_at: string;
   comments: Comment[];

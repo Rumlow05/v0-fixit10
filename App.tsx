@@ -554,12 +554,26 @@ interface CreateTicketModalProps {
 }
 
 const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, onCreate, currentUser }) => {
-  const [formData, setFormData] = useState({ title: "", description: "", priority: Priority.MEDIUM })
+  const [formData, setFormData] = useState({ 
+    title: "", 
+    description: "", 
+    priority: Priority.MEDIUM,
+    origin: 'Interna' as 'Interna' | 'Externa',
+    external_company: "",
+    external_contact: ""
+  })
   const [attachments, setAttachments] = useState<File[]>([])
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({ title: "", description: "", priority: Priority.MEDIUM })
+      setFormData({ 
+        title: "", 
+        description: "", 
+        priority: Priority.MEDIUM,
+        origin: 'Interna' as 'Interna' | 'Externa',
+        external_company: "",
+        external_contact: ""
+      })
       setAttachments([])
     }
   }, [isOpen])
@@ -569,6 +583,11 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.title.trim() && formData.description.trim()) {
+      // Validar campos condicionales para tickets externos
+      if (formData.origin === 'Externa' && (!formData.external_company?.trim() || !formData.external_contact?.trim())) {
+        alert("Por favor completa el nombre del aliado y el contacto externo")
+        return
+      }
       onCreate({ ...formData, attachments })
       onClose()
     }
@@ -613,6 +632,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
 
   const applyTemplate = (template: any) => {
     setFormData({
+      ...formData,
       title: template.title,
       description: template.description,
       priority: template.priority,
@@ -620,14 +640,14 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">Crear Nuevo Ticket</h3>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 sm:p-6 w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+        <h3 className="text-lg sm:text-xl font-medium leading-6 text-gray-900 dark:text-white mb-4">Crear Nuevo Ticket</h3>
 
         {/* Plantillas rápidas */}
-        <div className="mt-4 mb-4">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Plantillas Rápidas:</h4>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="mt-3 sm:mt-4 mb-4">
+          <h4 className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Plantillas Rápidas:</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {quickTemplates.map((template, index) => (
               <button
                 key={index}
@@ -642,6 +662,68 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Clasificación (Origen del ticket) - Solo para Admin, Nivel 1 y Nivel 2 */}
+          {currentUser && currentUser.role !== Role.USER && (
+            <div>
+              <label htmlFor="origin" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Clasificación (Origen)
+              </label>
+              <select
+                id="origin"
+                value={formData.origin}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  origin: e.target.value as 'Interna' | 'Externa',
+                  external_company: e.target.value === 'Interna' ? "" : formData.external_company,
+                  external_contact: e.target.value === 'Interna' ? "" : formData.external_contact
+                })}
+                className="mt-1 block w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              >
+                <option value="Interna">Interna</option>
+                <option value="Externa">Externa</option>
+              </select>
+            </div>
+          )}
+
+          {/* Campos condicionales para tickets externos - Solo para Admin, Nivel 1 y Nivel 2 */}
+          {currentUser && currentUser.role !== Role.USER && formData.origin === 'Externa' && (
+            <>
+              <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-lg p-3 sm:p-4">
+                <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-3">Información del Aliado Externo</h4>
+                
+                <div className="mb-3">
+                  <label htmlFor="external_company" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Nombre del Aliado
+                  </label>
+                  <input
+                    type="text"
+                    id="external_company"
+                    value={formData.external_company}
+                    onChange={(e) => setFormData({ ...formData, external_company: e.target.value })}
+                    required
+                    className="mt-1 block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                    placeholder="Ej: TecnoGlobal"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="external_contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Contacto Externo (Nombre)
+                  </label>
+                  <input
+                    type="text"
+                    id="external_contact"
+                    value={formData.external_contact}
+                    onChange={(e) => setFormData({ ...formData, external_contact: e.target.value })}
+                    required
+                    className="mt-1 block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                    placeholder="Ej: Carlos Ruiz"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Título
@@ -652,7 +734,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="mt-1 block w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               placeholder="Describe brevemente el problema"
             />
           </div>
@@ -666,7 +748,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
               rows={4}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="mt-1 block w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               placeholder="Proporciona detalles del problema..."
             />
           </div>
@@ -678,7 +760,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
               id="priority"
               value={formData.priority}
               onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="mt-1 block w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               {Object.values(Priority).map((p) => (
                 <option key={p} value={p}>
@@ -751,17 +833,17 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
           </div>
           */}
 
-          <div className="mt-6 flex justify-end space-x-3">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+              className="order-2 sm:order-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors w-full sm:w-auto"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md hover:bg-emerald-700 transition-colors"
+              className="order-1 sm:order-2 px-6 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md hover:bg-emerald-700 transition-colors w-full sm:w-auto"
             >
               Crear Ticket
             </button>
@@ -1519,8 +1601,15 @@ const TicketsView: React.FC<TicketsViewProps> = ({
               }`}
             >
               <div className="flex justify-between items-start mb-3">
-                <h3 className="font-bold text-gray-900 dark:text-white text-sm md:text-base leading-tight pr-2">{ticket.title}</h3>
-                <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg font-mono">#{ticket.id.slice(0, 8)}</span>
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900 dark:text-white text-sm md:text-base leading-tight pr-2">{ticket.title}</h3>
+                  {ticket.origin === 'Externa' && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      <span className="font-semibold">Aliado:</span> {ticket.external_company} ({ticket.external_contact})
+                    </p>
+                  )}
+                </div>
+                <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg font-mono">#​{ticket.id.slice(0, 8)}</span>
               </div>
               <div className="flex gap-2 mb-3">
                 <span
@@ -1531,6 +1620,11 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                 <span className={`px-3 py-1.5 text-xs font-semibold rounded-xl border ${getStatusColor(ticket.status)}`}>
                   {ticket.status}
                 </span>
+                {ticket.origin === 'Externa' && (
+                  <span className="px-3 py-1.5 text-xs font-semibold rounded-xl border bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700">
+                    Externa
+                  </span>
+                )}
               </div>
               {!isUserRole && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
@@ -1591,6 +1685,12 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                       }
                     </span>
                   </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Origen:</span>{" "}
+                    <span className="font-medium">
+                      {selectedTicket.origin === 'Externa' ? 'Externa' : 'Interna'}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
@@ -1607,6 +1707,26 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Sección de Aliado Externo (solo para tickets externos) */}
+            {selectedTicket.origin === 'Externa' && (
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 mb-6">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <span className="text-xl mr-2">🤝</span>
+                  Información del Aliado Externo
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Empresa/Aliado:</span>
+                    <p className="font-semibold text-gray-900 dark:text-white">{selectedTicket.external_company || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Contacto:</span>
+                    <p className="font-semibold text-gray-900 dark:text-white">{selectedTicket.external_contact || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 bg-white dark:bg-gray-800">
               <div className="flex justify-between items-center mb-4">
@@ -3330,6 +3450,9 @@ const App: React.FC = () => {
         category: ticketData.category,
         assigned_to: ticketData.assigned_to,
         requester_id: currentUser?.id,
+        origin: ticketData.origin || 'Interna',
+        external_company: ticketData.external_company || null,
+        external_contact: ticketData.external_contact || null,
       }
       console.log("[v0] handleCreateTicket - Creating ticket with data:", ticketToCreate)
       const newTicket = await ticketServiceClient.createTicket(ticketToCreate)
