@@ -3954,6 +3954,7 @@ const App: React.FC = () => {
     )
   }
 
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   return (
     <>
@@ -3992,18 +3993,53 @@ const App: React.FC = () => {
 
       {!showDatabaseSetup && (
         <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col md:flex-row overflow-hidden">
-          <Sidebar
-            currentUser={currentUser}
-            currentView={currentView}
-            setCurrentView={(view: string) => setCurrentView(view as "users" | "tickets" | "resolved")}
-            onLogout={handleLogout}
-            setCreateTicketModalOpen={openCreateTicketModal}
-            setIsWhatsAppAdminOpen={setIsWhatsAppAdminOpen}
-            isSyncing={isSyncing}
-          />
-          
+          {/* Desktop sidebar (hidden on small screens) */}
+          <div className="hidden md:block">
+            <Sidebar
+              currentUser={currentUser}
+              currentView={currentView}
+              setCurrentView={(view: string) => setCurrentView(view as "users" | "tickets" | "resolved")}
+              onLogout={handleLogout}
+              setCreateTicketModalOpen={openCreateTicketModal}
+              setIsWhatsAppAdminOpen={setIsWhatsAppAdminOpen}
+              isSyncing={isSyncing}
+            />
+          </div>
+
+          {/* Mobile sidebar drawer (overlay) */}
+          {mobileSidebarOpen && (
+            <div className="fixed inset-0 z-50 md:hidden">
+              <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSidebarOpen(false)} />
+              <div className="relative w-72 h-full">
+                <Sidebar
+                  currentUser={currentUser}
+                  currentView={currentView}
+                  setCurrentView={(view: string) => { setCurrentView(view as "users" | "tickets" | "resolved"); setMobileSidebarOpen(false) }}
+                  onLogout={() => { handleLogout(); setMobileSidebarOpen(false) }}
+                  setCreateTicketModalOpen={(open: boolean) => { openCreateTicketModal(open); setMobileSidebarOpen(false) }}
+                  setIsWhatsAppAdminOpen={(open: boolean) => { setIsWhatsAppAdminOpen(open); setMobileSidebarOpen(false) }}
+                  isSyncing={isSyncing}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden md:ml-0 bg-gradient-to-br from-gray-50/80 to-white/60 dark:from-gray-900/80 dark:to-gray-800/60 backdrop-blur-sm">
+            {/* Mobile top bar with hamburger */}
+            <div className="p-3 md:hidden bg-gradient-to-br from-gray-50/90 dark:from-gray-900/90 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <button onClick={() => setMobileSidebarOpen(true)} className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-bold">{isUserRole ? "Mis Solicitudes" : "Todos los Tickets"}</h2>
+                </div>
+                <div />
+              </div>
+            </div>
             {currentView === "tickets" ? (
               <TicketsView
                 tickets={tickets}
