@@ -582,10 +582,10 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (formData.title.trim() && formData.description.trim()) {
+      if (formData.title.trim() && formData.description.trim()) {
       // Validar campos condicionales para tickets externos
       if (formData.origin === 'Externa' && (!formData.external_company?.trim() || !formData.external_contact?.trim())) {
-        alert("Por favor completa el nombre del aliado y el contacto externo")
+        alert("Por favor completa el nombre del aliado y el solicitante")
         return
       }
       onCreate({ ...formData, attachments })
@@ -674,8 +674,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
                 onChange={(e) => setFormData({ 
                   ...formData, 
                   origin: e.target.value as 'Interna' | 'Externa',
-                  external_company: e.target.value === 'Interna' ? "" : formData.external_company,
-                  external_contact: e.target.value === 'Interna' ? "" : formData.external_contact
+                  external_company: e.target.value === 'Interna' ? "" : formData.external_company
                 })}
                 className="mt-1 block w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               >
@@ -686,11 +685,11 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
           )}
 
           {/* Campos condicionales para tickets externos - Solo para Admin, Nivel 1 y Nivel 2 */}
-          {currentUser && currentUser.role !== Role.USER && formData.origin === 'Externa' && (
+          {currentUser && currentUser.role !== Role.USER && (
             <>
-              <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-lg p-3 sm:p-4">
+              {formData.origin === 'Externa' ? (
+                <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-lg p-3 sm:p-4">
                 <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-3">Información del Aliado Externo</h4>
-                
                 <div className="mb-3">
                   <label htmlFor="external_company" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Nombre del Aliado
@@ -708,7 +707,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
 
                 <div>
                   <label htmlFor="external_contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Contacto Externo (Nombre)
+                    Solicitante
                   </label>
                   <input
                     type="text"
@@ -720,7 +719,26 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
                     placeholder="Ej: Carlos Ruiz"
                   />
                 </div>
-              </div>
+                </div>
+              ) : (
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-lg p-3 sm:p-4">
+                  <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-3">Solicitante</h4>
+                  <div>
+                    <label htmlFor="external_contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Solicitante
+                    </label>
+                    <input
+                      type="text"
+                      id="external_contact"
+                      value={formData.external_contact}
+                      onChange={(e) => setFormData({ ...formData, external_contact: e.target.value })}
+                      required
+                      className="mt-1 block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      placeholder="Ej: Juan Pérez"
+                    />
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -1524,9 +1542,9 @@ const TicketsView: React.FC<TicketsViewProps> = ({
   }
 
   return (
-    <div className={`flex-1 grid ${isUserRole ? "grid-cols-7" : (isAIAssistantVisible ? "grid-cols-10" : "grid-cols-7")} h-full overflow-hidden bg-gradient-to-br from-gray-50/80 to-white/60 backdrop-blur-sm`}>
+    <div className={`flex-1 grid grid-cols-1 ${isUserRole ? "md:grid-cols-7" : (isAIAssistantVisible ? "md:grid-cols-10" : "md:grid-cols-7")} h-full overflow-hidden bg-gradient-to-br from-gray-50/80 to-white/60 backdrop-blur-sm`}>
       {/* Ticket List */}
-      <div className="col-span-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200/60 dark:border-gray-700/60 overflow-y-auto shadow-sm">
+      <div className="md:col-span-3 col-span-1 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200/60 dark:border-gray-700/60 overflow-y-auto shadow-sm">
         <div className="p-4 md:p-6 border-b border-gray-200/60 dark:border-gray-700/60 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm sticky top-0 z-10">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -1603,10 +1621,21 @@ const TicketsView: React.FC<TicketsViewProps> = ({
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <h3 className="font-bold text-gray-900 dark:text-white text-sm md:text-base leading-tight pr-2">{ticket.title}</h3>
-                  {ticket.origin === 'Externa' && (
-                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                      <span className="font-semibold">Aliado:</span> {ticket.external_company} ({ticket.external_contact})
-                    </p>
+                  {ticket.origin === 'Externa' ? (
+                    <div className="mt-1 text-xs">
+                      <p className="text-blue-600 dark:text-blue-400">
+                        <span className="font-semibold">Aliado:</span> {ticket.external_company}
+                      </p>
+                      <p className="text-blue-600 dark:text-blue-400">
+                        <span className="font-semibold">Solicitante:</span> {ticket.external_contact}
+                      </p>
+                    </div>
+                  ) : (
+                    ticket.external_contact && (
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        <span className="font-semibold">Solicitante:</span> {ticket.external_contact}
+                      </p>
+                    )
                   )}
                 </div>
                 <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg font-mono">#​{ticket.id.slice(0, 8)}</span>
@@ -1638,7 +1667,7 @@ const TicketsView: React.FC<TicketsViewProps> = ({
       </div>
 
       {/* Ticket Detail */}
-      <div className={`col-span-4 overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm ${isUserRole ? "border-r-0" : ""}`}>
+      <div className={`md:col-span-4 col-span-1 overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm ${isUserRole ? "border-r-0" : ""}`}>
         {selectedTicket ? (
           <div className="p-6">
             <div className="mb-6">
@@ -1708,8 +1737,8 @@ const TicketsView: React.FC<TicketsViewProps> = ({
               </div>
             </div>
 
-            {/* Sección de Aliado Externo (solo para tickets externos) */}
-            {selectedTicket.origin === 'Externa' && (
+            {/* Sección de Aliado Externo / Solicitante */}
+            {selectedTicket.origin === 'Externa' ? (
               <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 mb-6">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                   <span className="text-xl mr-2">🤝</span>
@@ -1721,9 +1750,20 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                     <p className="font-semibold text-gray-900 dark:text-white">{selectedTicket.external_company || 'N/A'}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Contacto:</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Solicitante:</span>
                     <p className="font-semibold text-gray-900 dark:text-white">{selectedTicket.external_contact || 'N/A'}</p>
                   </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 mb-6">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <span className="text-xl mr-2">🧾</span>
+                  Información del Solicitante
+                </h4>
+                <div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Solicitante:</span>
+                  <p className="font-semibold text-gray-900 dark:text-white">{selectedTicket.external_contact || 'N/A'}</p>
                 </div>
               </div>
             )}
@@ -1926,7 +1966,7 @@ const TicketsView: React.FC<TicketsViewProps> = ({
 
       {/* AI Panel */}
       {canUseAI && isAIAssistantVisible && (
-        <div className="col-span-3 bg-gradient-to-br from-gray-50 to-gray-100 border-l border-gray-200 overflow-y-auto">
+        <div className="md:col-span-3 col-span-1 bg-gradient-to-br from-gray-50 to-gray-100 border-l border-gray-200 overflow-y-auto">
           <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
