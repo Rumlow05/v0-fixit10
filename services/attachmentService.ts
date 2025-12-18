@@ -51,6 +51,39 @@ export class AttachmentService {
   }
 
   /**
+   * Obtiene el icono correspondiente al tipo de archivo
+   */
+  static getFileIcon(fileType: string): string {
+    if (!fileType) return '📄'
+    if (fileType.startsWith('image/')) return '🖼️'
+    if (fileType.startsWith('video/')) return '🎥'
+    if (fileType.startsWith('audio/')) return '🎵'
+    if (fileType.includes('pdf')) return '📕'
+    if (fileType.includes('word') || fileType.includes('document')) return '📝'
+    if (fileType.includes('excel') || fileType.includes('sheet')) return '📊'
+    if (fileType.includes('zip') || fileType.includes('compressed')) return '📦'
+    return '📄'
+  }
+
+  /**
+   * Formatea el tamaño del archivo
+   */
+  static formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  /**
+   * Obtiene la URL de descarga del archivo
+   */
+  static getFileDownloadUrl(attachment: Attachment): string {
+    return attachment.file_path
+  }
+
+  /**
    * Crea un nuevo attachment en la base de datos
    */
   static async createAttachment(attachmentData: CreateAttachmentData): Promise<Attachment> {
@@ -146,106 +179,17 @@ export class AttachmentService {
         method: 'POST',
         body: file,
       })
+
+      const result = await response.json()
       
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error subiendo archivo')
-      }
-      
-      const blobData = await response.json()
-      console.log(`[AttachmentService] Archivo subido a Vercel Blob:`, blobData)
-      
-      return blobData
+      console.log(`[AttachmentService] Archivo subido exitosamente:`, result)
+      return result
     } catch (error) {
-      console.error('[AttachmentService] Error subiendo archivo a Vercel Blob:', error)
+      console.error('[AttachmentService] Error en uploadFileToBlob:', error)
       throw error
     }
   }
-
-  /**
-   * Procesa y guarda un archivo adjunto usando Vercel Blob
-   */
-  static async uploadAttachment(uploadData: UploadFileData): Promise<Attachment> {
-    try {
-      console.log('[AttachmentService] Subiendo archivo:', uploadData.file.name)
-      console.log('[AttachmentService] Datos de upload:', {
-        ticket_id: uploadData.ticket_id,
-        uploaded_by: uploadData.uploaded_by,
-        file_size: uploadData.file.size,
-        file_type: uploadData.file.type
-      })
-      
-      // Subir archivo a Vercel Blob
-      const blobData = await this.uploadFileToBlob(uploadData.file, uploadData.ticket_id)
-      console.log('[AttachmentService] Blob data recibida:', blobData)
-      
-      // Crear datos del attachment
-      const attachmentData: CreateAttachmentData = {
-        ticket_id: uploadData.ticket_id,
-        filename: blobData.pathname, // Nombre del archivo en Vercel Blob
-        original_name: uploadData.file.name,
-        file_size: uploadData.file.size,
-        file_type: uploadData.file.type,
-        file_path: blobData.url, // URL de Vercel Blob
-        uploaded_by: uploadData.uploaded_by
-      }
-
-      // Guardar en base de datos
-      console.log('[AttachmentService] Creando attachment en BD con datos:', attachmentData)
-      const attachment = await this.createAttachment(attachmentData)
-      
-      console.log('[AttachmentService] Archivo subido exitosamente:', attachment)
-      return attachment
-    } catch (error) {
-      console.error('[AttachmentService] Error en uploadAttachment:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Obtiene la URL de descarga de un archivo desde Vercel Blob
-   */
-  static getFileDownloadUrl(attachment: Attachment): string {
-    // Retorna la URL directa de Vercel Blob
-    return attachment.file_path
-  }
-
-  /**
-   * Formatea el tamaño del archivo en formato legible
-   */
-  static formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 Bytes'
-    
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-
-  /**
-   * Obtiene el icono apropiado para el tipo de archivo
-   */
-  static getFileIcon(fileType: string): string {
-    if (fileType.startsWith('image/')) return '🖼️'
-    if (fileType.includes('pdf')) return '📄'
-    if (fileType.includes('word') || fileType.includes('document')) return '📝'
-    if (fileType.includes('excel') || fileType.includes('spreadsheet')) return '📊'
-    if (fileType.includes('powerpoint') || fileType.includes('presentation')) return '📈'
-    if (fileType.includes('zip') || fileType.includes('rar')) return '📦'
-    if (fileType.includes('video')) return '🎥'
-    if (fileType.includes('audio')) return '🎵'
-    return '📎'
-  }
 }
 
-// Funciones de conveniencia para uso directo
-export const attachmentServiceClient = {
-  getAttachmentsByTicketId: AttachmentService.getAttachmentsByTicketId,
-  createAttachment: AttachmentService.createAttachment,
-  deleteAttachment: AttachmentService.deleteAttachment,
-  uploadAttachment: AttachmentService.uploadAttachment,
-  getFileDownloadUrl: AttachmentService.getFileDownloadUrl,
-  formatFileSize: AttachmentService.formatFileSize,
-  getFileIcon: AttachmentService.getFileIcon
-}
+// Exportar como singleton/cliente para mantener consistencia
+export const attachmentServiceClient = AttachmentService

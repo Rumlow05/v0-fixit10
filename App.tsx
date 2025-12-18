@@ -7,11 +7,11 @@ import { suggestSolution, generateAdminReport } from "./services/geminiService"
 
 import { userServiceClient } from "./services/userService"
 import { ticketServiceClient } from "./services/ticketServiceClient"
-// import { attachmentServiceClient } from "./services/attachmentService" // DESHABILITADO TEMPORALMENTE
+import { attachmentServiceClient } from "./services/attachmentService"
 import { syncService, createUserEvent, createTicketEvent } from "./services/syncService"
 import { useNotifications } from "./hooks/useNotifications"
 import NotificationContainer from "./components/NotificationContainer"
-// import AttachmentViewer from "./components/AttachmentViewer" // DESHABILITADO TEMPORALMENTE
+import AttachmentViewer from "./components/AttachmentViewer"
 import { activityService, createActivityEvents } from "./services/activityService"
 import DarkModeToggle from "./components/DarkModeToggle"
 
