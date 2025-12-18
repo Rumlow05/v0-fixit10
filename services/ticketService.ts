@@ -38,9 +38,7 @@ export async function getAllTickets(): Promise<Ticket[]> {
       .select(`
         *,
         assigned_user:assigned_to(name, email),
-        creator:requester_id(name, email),
-        comments:comments(*, user:user_id(name, email)),
-        attachments:attachments(*)
+        creator:created_by(name, email)
       `)
       .order("created_at", { ascending: false })
 
@@ -49,7 +47,11 @@ export async function getAllTickets(): Promise<Ticket[]> {
       return []
     }
 
-    return data || []
+    const normalized = (data || []).map((t: any) => ({
+      ...t,
+      requester_id: t.requester_id ?? t.created_by,
+    }))
+    return normalized
   } catch (error) {
     console.error("[v0] Database connection error:", error)
     return []
@@ -64,8 +66,7 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
     .select(`
       *,
       assigned_user:assigned_to(name, email),
-      creator:requester_id(name, email),
-      attachments:attachments(*)
+      creator:created_by(name, email)
     `)
     .eq("id", id)
     .single()
@@ -79,19 +80,33 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
   }
 
   return data
+    ? { ...(data as any), requester_id: (data as any).requester_id ?? (data as any).created_by }
+    : null
 }
 
 export async function createTicket(ticketData: CreateTicketData): Promise<Ticket> {
   const supabase = await createClient()
 
+  const payload: any = {
+    title: ticketData.title,
+    description: ticketData.description,
+    priority: ticketData.priority,
+    status: Status.OPEN,
+    category: ticketData.category,
+    assigned_to: ticketData.assigned_to ?? null,
+    created_by: ticketData.requester_id,
+    origin: ticketData.origin ?? 'Interna',
+    external_company: ticketData.external_company ?? null,
+    external_contact: ticketData.external_contact ?? null,
+  }
+
   const { data, error } = await supabase
     .from("tickets")
-    .insert([ticketData])
+    .insert([payload])
     .select(`
       *,
       assigned_user:assigned_to(name, email),
-      creator:requester_id(name, email),
-      attachments:attachments(*)
+      creator:created_by(name, email)
     `)
     .single()
 
@@ -100,14 +115,15 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
     throw new Error("Error al crear ticket")
   }
 
-  return data
+  const normalized = { ...(data as any), requester_id: (data as any).requester_id ?? (data as any).created_by }
+  return normalized
 }
 
 export async function updateTicket(id: string, ticketData: UpdateTicketData): Promise<Ticket> {
   const supabase = await createClient()
 
   // If status is being changed to resolved, set resolved_at
-  if (ticketData.status === "resuelto") {
+  if (ticketData.status === Status.RESOLVED) {
     ticketData = {
       ...ticketData,
       resolved_at: getColombiaTimestamp(),
@@ -121,7 +137,7 @@ export async function updateTicket(id: string, ticketData: UpdateTicketData): Pr
     .select(`
       *,
       assigned_user:assigned_to(name, email),
-      creator:requester_id(name, email)
+      creator:created_by(name, email)
     `)
     .single()
 
@@ -130,7 +146,8 @@ export async function updateTicket(id: string, ticketData: UpdateTicketData): Pr
     throw new Error("Error al actualizar ticket")
   }
 
-  return data
+  const normalized = { ...(data as any), requester_id: (data as any).requester_id ?? (data as any).created_by }
+  return normalized
 }
 
 export async function deleteTicket(id: string): Promise<void> {
@@ -152,9 +169,9 @@ export async function getTicketsByUser(userId: string): Promise<Ticket[]> {
     .select(`
       *,
       assigned_user:assigned_to(name, email),
-      creator:requester_id(name, email)
+      creator:created_by(name, email)
     `)
-    .or(`requester_id.eq.${userId},assigned_to.eq.${userId}`)
+    .or(`created_by.eq.${userId},assigned_to.eq.${userId}`)
     .order("created_at", { ascending: false })
 
   if (error) {
@@ -162,7 +179,11 @@ export async function getTicketsByUser(userId: string): Promise<Ticket[]> {
     throw new Error("Error al obtener tickets del usuario")
   }
 
-  return data || []
+  const normalized = (data || []).map((t: any) => ({
+    ...t,
+    requester_id: t.requester_id ?? t.created_by,
+  }))
+  return normalized
 }
 
 // Client-side functions for browser usage
@@ -176,9 +197,7 @@ export const ticketServiceClient = {
         .select(`
           *,
           assigned_user:assigned_to(name, email),
-          creator:requester_id(name, email),
-          comments:comments(*, user:user_id(name, email)),
-          attachments:attachments(*)
+          creator:created_by(name, email)
         `)
         .order("created_at", { ascending: false })
 
@@ -187,7 +206,11 @@ export const ticketServiceClient = {
         return []
       }
 
-      return data || []
+      const normalized = (data || []).map((t: any) => ({
+        ...t,
+        requester_id: t.requester_id ?? t.created_by,
+      }))
+      return normalized
     } catch (error) {
       console.error("[v0] Database connection error:", error)
       return []
@@ -197,15 +220,26 @@ export const ticketServiceClient = {
   async createTicket(ticketData: CreateTicketData): Promise<Ticket> {
     const supabase = createBrowserClient()
 
+    const payload: any = {
+      title: ticketData.title,
+      description: ticketData.description,
+      priority: ticketData.priority,
+      status: Status.OPEN,
+      category: ticketData.category,
+      assigned_to: ticketData.assigned_to ?? null,
+      created_by: ticketData.requester_id,
+      origin: ticketData.origin ?? 'Interna',
+      external_company: ticketData.external_company ?? null,
+      external_contact: ticketData.external_contact ?? null,
+    }
+
     const { data, error } = await supabase
       .from("tickets")
-      .insert([ticketData])
+      .insert([payload])
       .select(`
         *,
         assigned_user:assigned_to(name, email),
-        creator:requester_id(name, email),
-        comments:comments(*, user:user_id(name, email)),
-        attachments:attachments(*)
+        creator:created_by(name, email)
       `)
       .single()
 
@@ -214,14 +248,15 @@ export const ticketServiceClient = {
       throw new Error("Error al crear ticket")
     }
 
-    return data
+    const normalized = { ...(data as any), requester_id: (data as any).requester_id ?? (data as any).created_by }
+    return normalized
   },
 
   async updateTicket(id: string, ticketData: UpdateTicketData): Promise<Ticket> {
     const supabase = createBrowserClient()
 
     // If status is being changed to resolved, set resolved_at
-    if (ticketData.status === "resuelto") {
+    if (ticketData.status === Status.RESOLVED) {
       ticketData = {
         ...ticketData,
         resolved_at: getColombiaTimestamp(),
@@ -235,8 +270,7 @@ export const ticketServiceClient = {
       .select(`
         *,
         assigned_user:assigned_to(name, email),
-        creator:requester_id(name, email),
-      comments:comments(*, user:user_id(name, email))
+        creator:created_by(name, email)
       `)
       .single()
 
@@ -245,7 +279,8 @@ export const ticketServiceClient = {
       throw new Error("Error al actualizar ticket")
     }
 
-    return data
+    const normalized = { ...(data as any), requester_id: (data as any).requester_id ?? (data as any).created_by }
+    return normalized
   },
 
   async deleteTicket(id: string): Promise<void> {
