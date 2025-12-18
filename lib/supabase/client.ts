@@ -10,6 +10,7 @@ interface MockSupabaseClient {
         value: any,
       ) => {
         single: () => Promise<{ data: any; error: null }>
+        order: (column: string, options?: any) => Promise<{ data: any[]; error: null }>
       }
     }
     insert: (data: any[]) => {
@@ -163,6 +164,26 @@ const saveMockTickets = (tickets: any[]) => {
   }
 }
 
+const getMockAttachments = (): any[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('fixit_mock_attachments')
+      if (stored) {
+        return JSON.parse(stored)
+      }
+    } catch (e) {
+      console.error("[v0] Error parsing mock attachments from localStorage:", e)
+    }
+  }
+  return []
+}
+
+const saveMockAttachments = (attachments: any[]) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('fixit_mock_attachments', JSON.stringify(attachments))
+  }
+}
+
 const mockTickets = [
   {
     id: "ticket-1",
@@ -178,7 +199,7 @@ const mockTickets = [
   },
 ]
 
-function createMockClient(): MockSupabaseClient {
+export function createMockClient(): MockSupabaseClient {
   return {
     from: (table: string) => ({
       select: (columns: string) => ({
@@ -197,6 +218,10 @@ function createMockClient(): MockSupabaseClient {
               creator: (t.requester_id || t.created_by) ? users.find((u: any) => u.id === (t.requester_id || t.created_by)) : null
             }))
             return { data: ticketsWithJoins, error: null }
+          }
+          if (table === "attachments") {
+            const attachments = getMockAttachments()
+            return { data: attachments, error: null }
           }
           return { data: [], error: null }
         },
@@ -225,6 +250,15 @@ function createMockClient(): MockSupabaseClient {
             }
             return { data: null, error: null }
           },
+          order: async (orderColumn: string, options?: any) => {
+             console.log(`[v0] Mock query: SELECT ${columns} FROM ${table} WHERE ${column} = ${value} ORDER BY ${orderColumn}`)
+             if (table === "attachments" && column === "ticket_id") {
+               const attachments = getMockAttachments()
+               const filtered = attachments.filter(a => a.ticket_id === value)
+               return { data: filtered, error: null }
+             }
+             return { data: [], error: null }
+          }
         }),
       }),
       insert: (data: any[]) => ({
@@ -251,6 +285,17 @@ function createMockClient(): MockSupabaseClient {
               tickets.push(ticketWithDefaults)
               saveMockTickets(tickets)
               return { data: ticketWithDefaults, error: null }
+            }
+            if (table === "attachments") {
+               const attachments = getMockAttachments()
+               const attachmentWithDefaults = {
+                 ...newItem,
+                 created_at: newItem.created_at || getColombiaTimestamp(),
+                 id: newItem.id || `attachment-${Date.now()}`
+               }
+               attachments.push(attachmentWithDefaults)
+               saveMockAttachments(attachments)
+               return { data: attachmentWithDefaults, error: null }
             }
             return { data: newItem, error: null }
           },

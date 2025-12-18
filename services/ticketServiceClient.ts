@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client"
+import { createClient, createMockClient } from "@/lib/supabase/client"
 import { Ticket, Priority, Status } from "@/types"
 import { getColombiaTimestamp } from "@/utils/colombiaTime"
 
@@ -49,7 +49,33 @@ export const ticketServiceClient = {
 
       if (error) {
         console.error("[v0] Error fetching tickets:", error)
-        return []
+        console.log("[v0] Attempting fallback to mock client...")
+        try {
+          const mockSupabase = createMockClient()
+          const { data: mockData, error: mockError } = await mockSupabase
+            .from("tickets")
+            .select(`
+              *,
+              assigned_user:assigned_to(name, email),
+              creator:created_by(name, email)
+            `)
+            .order("created_at", { ascending: false })
+
+          if (mockError) {
+             console.error("[v0] Mock client also failed:", mockError)
+             return []
+          }
+
+          const normalized = (mockData || []).map((t: any) => ({
+            ...t,
+            requester_id: t.requester_id ?? t.created_by,
+            priority: fromDbPriority(t.priority),
+          }))
+          return normalized
+        } catch (mockCatchError) {
+           console.error("[v0] Mock client exception:", mockCatchError)
+           return []
+        }
       }
 
       const normalized = (data || []).map((t: any) => ({

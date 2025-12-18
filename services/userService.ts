@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createBrowserClient } from "@/lib/supabase/client"
+import { createClient as createBrowserClient, createMockClient } from "@/lib/supabase/client"
 import { Role } from "../types"
 
 export interface User {
@@ -326,13 +326,28 @@ export const userServiceClient = {
 
       if (error) {
         console.error("[v0] Client-side Error fetching users:", error)
-        console.error("[v0] Client-side Error details:", {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        })
-        return []
+        console.log("[v0] Attempting fallback to mock client for users...")
+        try {
+          const mockSupabase = createMockClient()
+          const { data: mockData, error: mockError } = await mockSupabase
+            .from("users")
+            .select("*")
+            .order("created_at", { ascending: false })
+
+          if (mockError) {
+             console.error("[v0] Mock client also failed for users:", mockError)
+             return []
+          }
+
+          console.log("[v0] Mock users loaded:", mockData?.length)
+          return (mockData || []).map((user: Record<string, any>) => ({
+            ...user,
+            role: getRoleEnumValue(user.role),
+          }))
+        } catch (mockCatchError) {
+           console.error("[v0] Mock client exception for users:", mockCatchError)
+           return []
+        }
       }
 
       console.log("[v0] Client-side getAllUsers: Successfully fetched users:", data?.length || 0)

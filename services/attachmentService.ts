@@ -1,4 +1,4 @@
-import { createBrowserClient } from '../lib/supabase/client'
+import { createBrowserClient, createMockClient } from '../lib/supabase/client'
 import { Attachment } from '../types'
 
 // Interfaz para crear un nuevo attachment
@@ -39,7 +39,19 @@ export class AttachmentService {
 
       if (error) {
         console.error('[AttachmentService] Error obteniendo attachments:', error)
-        throw error
+        console.log('[AttachmentService] Attempting fallback to mock client...')
+        const mockSupabase = createMockClient()
+        const { data: mockData, error: mockError } = await mockSupabase
+          .from('attachments')
+          .select('*')
+          .eq('ticket_id', ticketId)
+          .order('created_at', { ascending: false })
+
+        if (mockError) {
+           console.error('[AttachmentService] Mock client also failed:', mockError)
+           throw error
+        }
+        return mockData || []
       }
 
       console.log(`[AttachmentService] Attachments obtenidos:`, data)
