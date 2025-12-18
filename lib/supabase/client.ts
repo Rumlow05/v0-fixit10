@@ -37,9 +37,14 @@ interface MockSupabaseClient {
 // Mock data - usando localStorage para persistencia
 const getMockUsers = (): any[] => {
   if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('fixit_mock_users')
-    if (stored) {
-      return JSON.parse(stored)
+    try {
+      const stored = localStorage.getItem('fixit_mock_users')
+      if (stored) {
+        return JSON.parse(stored)
+      }
+    } catch (e) {
+      console.error("[v0] Error parsing mock users from localStorage:", e)
+      // Fallback to default users if parsing fails
     }
   }
   
@@ -81,9 +86,14 @@ const saveMockUsers = (users: any[]) => {
 
 const getMockTickets = (): any[] => {
   if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('fixit_mock_tickets')
-    if (stored) {
-      return JSON.parse(stored)
+    try {
+      const stored = localStorage.getItem('fixit_mock_tickets')
+      if (stored) {
+        return JSON.parse(stored)
+      }
+    } catch (e) {
+      console.error("[v0] Error parsing mock tickets from localStorage:", e)
+      // Fallback to default tickets
     }
   }
   

@@ -2787,6 +2787,11 @@ const App: React.FC = () => {
           console.log("[v0] Database tables not found, showing setup screen")
           setShowDatabaseSetup(true)
           setDatabaseReady(false)
+        } else {
+          // For other errors, assume DB might be ready but empty or connection issue
+          // We set databaseReady to true to avoid infinite loading spinner
+          console.log("[v0] Generic error loading users, proceeding with empty state")
+          setDatabaseReady(true)
         }
         // Keep empty array on error
       } finally {

@@ -338,7 +338,7 @@ export const userServiceClient = {
       console.log("[v0] Client-side getAllUsers: Successfully fetched users:", data?.length || 0)
       console.log("[v0] Client-side getAllUsers: Users data:", data)
 
-      return (data || []).map((user: any) => ({
+      return (data || []).map((user: Record<string, any>) => ({
         ...user,
         role: getRoleEnumValue(user.role),
       }))
