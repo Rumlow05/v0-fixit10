@@ -34,7 +34,6 @@ export interface UpdateTicketData {
   category?: string
   assigned_to?: string
   resolution_notes?: string
-}
 
 // Server-side functions
 export async function getAllTickets(): Promise<Ticket[]> {
@@ -139,21 +138,20 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
 export async function updateTicket(id: string, ticketData: UpdateTicketData): Promise<Ticket> {
   const supabase = await createClient()
 
+  const payload: any = { ...ticketData }
+
   // If status is being changed to resolved, set resolved_at
   if (ticketData.status === Status.RESOLVED) {
-    ticketData = {
-      ...ticketData,
-      resolved_at: getColombiaTimestamp(),
-    }
+    payload.resolved_at = getColombiaTimestamp()
   }
 
   if (ticketData.priority) {
-    ticketData = { ...ticketData, priority: toDbPriority(ticketData.priority) }
+    payload.priority = toDbPriority(ticketData.priority)
   }
 
   const { data, error } = await supabase
     .from("tickets")
-    .update(ticketData)
+    .update(payload)
     .eq("id", id)
     .select(`
       *,
@@ -208,7 +206,7 @@ export async function getTicketsByUser(userId: string): Promise<Ticket[]> {
     requester_id: t.requester_id ?? t.created_by,
     priority: fromDbPriority(t.priority),
   }))
-  return all.filter((t: any) => t.created_by === userId || t.assigned_to === userId)
+  return all.filter((t: any) => t.requester_id === userId || t.assigned_to === userId)
 }
 
 // Client-side functions for browser usage
@@ -285,21 +283,20 @@ export const ticketServiceClient = {
   async updateTicket(id: string, ticketData: UpdateTicketData): Promise<Ticket> {
     const supabase = createBrowserClient()
 
+    const payload: any = { ...ticketData }
+
     // If status is being changed to resolved, set resolved_at
     if (ticketData.status === Status.RESOLVED) {
-      ticketData = {
-        ...ticketData,
-        resolved_at: getColombiaTimestamp(),
-      }
+      payload.resolved_at = getColombiaTimestamp()
     }
 
     if (ticketData.priority) {
-      ticketData = { ...ticketData, priority: toDbPriority(ticketData.priority) }
+      payload.priority = toDbPriority(ticketData.priority)
     }
 
     const { data, error } = await supabase
       .from("tickets")
-      .update(ticketData)
+      .update(payload)
       .eq("id", id)
       .select(`
         *,

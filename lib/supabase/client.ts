@@ -189,6 +189,11 @@ function createMockClient(): MockSupabaseClient {
               const user = users.find((u) => u[column as keyof typeof u] === value)
               return { data: user || null, error: null }
             }
+            if (table === "tickets") {
+              const tickets = getMockTickets()
+              const ticket = tickets.find((t) => t[column as keyof typeof t] === value)
+              return { data: ticket || null, error: null }
+            }
             return { data: null, error: null }
           },
         }),
