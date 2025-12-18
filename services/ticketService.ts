@@ -34,6 +34,8 @@ export interface UpdateTicketData {
   category?: string
   assigned_to?: string
   resolution_notes?: string
+  resolved_at?: string
+}
 
 // Server-side functions
 export async function getAllTickets(): Promise<Ticket[]> {
