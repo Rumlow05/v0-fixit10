@@ -46,26 +46,31 @@ export const activityService = {
   },
 
   async getActivityByTicket(ticketId: string): Promise<ActivityEvent[]> {
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    const { data, error } = await supabase
-      .from("activity_log")
-      .select(`
-        *,
-        user:user_id(name, email)
-      `)
-      .eq("ticket_id", ticketId)
-      .order("created_at", { ascending: true })
+      const { data, error } = await supabase
+        .from("activity_log")
+        .select(`
+          *,
+          user:user_id(name, email)
+        `)
+        .eq("ticket_id", ticketId)
+        .order("created_at", { ascending: true })
 
-    if (error) {
-      console.error("[v0] Error fetching activity:", error)
+      if (error) {
+        console.error("[v0] Error fetching activity:", error)
+        return []
+      }
+
+      return (data || []).map((activity: any) => ({
+        ...activity,
+        user_name: activity.user?.name || 'Usuario'
+      }))
+    } catch (error) {
+      console.error("[v0] Error fetching activity (exception):", error)
       return []
     }
-
-    return (data || []).map((activity: any) => ({
-      ...activity,
-      user_name: activity.user?.name || 'Usuario'
-    }))
   },
 
   async deleteActivity(activityId: string): Promise<void> {

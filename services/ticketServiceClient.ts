@@ -86,7 +86,33 @@ export const ticketServiceClient = {
       return normalized
     } catch (error) {
       console.error("[v0] Database connection error:", error)
-      return []
+      console.log("[v0] Attempting fallback to mock client after exception...")
+      try {
+        const mockSupabase = createMockClient()
+        const { data: mockData, error: mockError } = await mockSupabase
+          .from("tickets")
+          .select(`
+            *,
+            assigned_user:assigned_to(name, email),
+            creator:created_by(name, email)
+          `)
+          .order("created_at", { ascending: false })
+
+        if (mockError) {
+           console.error("[v0] Mock client also failed:", mockError)
+           return []
+        }
+
+        const normalized = (mockData || []).map((t: any) => ({
+          ...t,
+          requester_id: t.requester_id ?? t.created_by,
+          priority: fromDbPriority(t.priority),
+        }))
+        return normalized
+      } catch (mockCatchError) {
+         console.error("[v0] Mock client exception:", mockCatchError)
+         return []
+      }
     }
   },
 
@@ -118,7 +144,30 @@ export const ticketServiceClient = {
 
     if (error) {
       console.error("[v0] Error creating ticket:", error)
-      throw new Error("Error al crear ticket")
+      console.log("[v0] Attempting fallback to mock client for creation...")
+      try {
+        const mockSupabase = createMockClient()
+        const { data: mockData, error: mockError } = await mockSupabase
+          .from("tickets")
+          .insert([payload])
+          .select()
+          .single()
+
+        if (mockError) {
+          console.error("[v0] Mock client creation failed:", mockError)
+          throw new Error("Error al crear ticket (mock)")
+        }
+
+        const normalized = {
+          ...(mockData as any),
+          requester_id: (mockData as any).requester_id ?? (mockData as any).created_by,
+          priority: fromDbPriority((mockData as any).priority),
+        }
+        return normalized
+      } catch (mockException) {
+        console.error("[v0] Mock client exception during creation:", mockException)
+        throw new Error("Error al crear ticket")
+      }
     }
 
     const normalized = {

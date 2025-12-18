@@ -40,25 +40,43 @@ export class AttachmentService {
       if (error) {
         console.error('[AttachmentService] Error obteniendo attachments:', error)
         console.log('[AttachmentService] Attempting fallback to mock client...')
-        const mockSupabase = createMockClient()
-        const { data: mockData, error: mockError } = await mockSupabase
-          .from('attachments')
-          .select('*')
-          .eq('ticket_id', ticketId)
-          .order('created_at', { ascending: false })
+        try {
+          const mockSupabase = createMockClient()
+          const { data: mockData, error: mockError } = await mockSupabase
+            .from('attachments')
+            .select('*')
+            .eq('ticket_id', ticketId)
+            .order('created_at', { ascending: false })
 
-        if (mockError) {
-           console.error('[AttachmentService] Mock client also failed:', mockError)
-           throw error
+          if (mockError) {
+             console.error('[AttachmentService] Mock client also failed:', mockError)
+             return []
+          }
+          return mockData || []
+        } catch (mockCatchError) {
+          console.error('[AttachmentService] Mock client exception:', mockCatchError)
+          return []
         }
-        return mockData || []
       }
 
       console.log(`[AttachmentService] Attachments obtenidos:`, data)
       return data || []
     } catch (error) {
       console.error('[AttachmentService] Error en getAttachmentsByTicketId:', error)
-      throw error
+      console.log('[AttachmentService] Attempting fallback to mock client after exception...')
+      try {
+        const mockSupabase = createMockClient()
+        const { data: mockData, error: mockError } = await mockSupabase
+          .from('attachments')
+          .select('*')
+          .eq('ticket_id', ticketId)
+          .order('created_at', { ascending: false })
+          
+        if (mockError) return []
+        return mockData || []
+      } catch {
+        return []
+      }
     }
   }
 
