@@ -6,6 +6,14 @@ import { getColombiaTimestamp } from "@/utils/colombiaTime"
 // Re-export types from types.ts
 export { Ticket, Priority, Status }
 
+function toDbPriority(priority: Priority): string {
+  return priority === Priority.CRITICAL ? "Urgente" : priority
+}
+
+function fromDbPriority(priority: string): Priority {
+  return priority === "Urgente" ? Priority.CRITICAL : (priority as Priority)
+}
+
 export interface CreateTicketData {
   title: string
   description: string
@@ -50,6 +58,7 @@ export async function getAllTickets(): Promise<Ticket[]> {
     const normalized = (data || []).map((t: any) => ({
       ...t,
       requester_id: t.requester_id ?? t.created_by,
+      priority: fromDbPriority(t.priority),
     }))
     return normalized
   } catch (error) {
@@ -80,7 +89,11 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
   }
 
   return data
-    ? { ...(data as any), requester_id: (data as any).requester_id ?? (data as any).created_by }
+    ? {
+        ...(data as any),
+        requester_id: (data as any).requester_id ?? (data as any).created_by,
+        priority: fromDbPriority((data as any).priority),
+      }
     : null
 }
 
@@ -90,7 +103,7 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
   const payload: any = {
     title: ticketData.title,
     description: ticketData.description,
-    priority: ticketData.priority,
+    priority: toDbPriority(ticketData.priority),
     status: Status.OPEN,
     category: ticketData.category,
     assigned_to: ticketData.assigned_to ?? null,
@@ -115,7 +128,11 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
     throw new Error("Error al crear ticket")
   }
 
-  const normalized = { ...(data as any), requester_id: (data as any).requester_id ?? (data as any).created_by }
+  const normalized = {
+    ...(data as any),
+    requester_id: (data as any).requester_id ?? (data as any).created_by,
+    priority: fromDbPriority((data as any).priority),
+  }
   return normalized
 }
 
@@ -128,6 +145,10 @@ export async function updateTicket(id: string, ticketData: UpdateTicketData): Pr
       ...ticketData,
       resolved_at: getColombiaTimestamp(),
     }
+  }
+
+  if (ticketData.priority) {
+    ticketData = { ...ticketData, priority: toDbPriority(ticketData.priority) }
   }
 
   const { data, error } = await supabase
@@ -146,7 +167,11 @@ export async function updateTicket(id: string, ticketData: UpdateTicketData): Pr
     throw new Error("Error al actualizar ticket")
   }
 
-  const normalized = { ...(data as any), requester_id: (data as any).requester_id ?? (data as any).created_by }
+  const normalized = {
+    ...(data as any),
+    requester_id: (data as any).requester_id ?? (data as any).created_by,
+    priority: fromDbPriority((data as any).priority),
+  }
   return normalized
 }
 
@@ -171,7 +196,6 @@ export async function getTicketsByUser(userId: string): Promise<Ticket[]> {
       assigned_user:assigned_to(name, email),
       creator:created_by(name, email)
     `)
-    .or(`created_by.eq.${userId},assigned_to.eq.${userId}`)
     .order("created_at", { ascending: false })
 
   if (error) {
@@ -179,11 +203,12 @@ export async function getTicketsByUser(userId: string): Promise<Ticket[]> {
     throw new Error("Error al obtener tickets del usuario")
   }
 
-  const normalized = (data || []).map((t: any) => ({
+  const all = (data || []).map((t: any) => ({
     ...t,
     requester_id: t.requester_id ?? t.created_by,
+    priority: fromDbPriority(t.priority),
   }))
-  return normalized
+  return all.filter((t: any) => t.created_by === userId || t.assigned_to === userId)
 }
 
 // Client-side functions for browser usage
@@ -209,6 +234,7 @@ export const ticketServiceClient = {
       const normalized = (data || []).map((t: any) => ({
         ...t,
         requester_id: t.requester_id ?? t.created_by,
+        priority: fromDbPriority(t.priority),
       }))
       return normalized
     } catch (error) {
@@ -223,7 +249,7 @@ export const ticketServiceClient = {
     const payload: any = {
       title: ticketData.title,
       description: ticketData.description,
-      priority: ticketData.priority,
+      priority: toDbPriority(ticketData.priority),
       status: Status.OPEN,
       category: ticketData.category,
       assigned_to: ticketData.assigned_to ?? null,
@@ -248,7 +274,11 @@ export const ticketServiceClient = {
       throw new Error("Error al crear ticket")
     }
 
-    const normalized = { ...(data as any), requester_id: (data as any).requester_id ?? (data as any).created_by }
+    const normalized = {
+      ...(data as any),
+      requester_id: (data as any).requester_id ?? (data as any).created_by,
+      priority: fromDbPriority((data as any).priority),
+    }
     return normalized
   },
 
@@ -261,6 +291,10 @@ export const ticketServiceClient = {
         ...ticketData,
         resolved_at: getColombiaTimestamp(),
       }
+    }
+
+    if (ticketData.priority) {
+      ticketData = { ...ticketData, priority: toDbPriority(ticketData.priority) }
     }
 
     const { data, error } = await supabase
@@ -279,7 +313,11 @@ export const ticketServiceClient = {
       throw new Error("Error al actualizar ticket")
     }
 
-    const normalized = { ...(data as any), requester_id: (data as any).requester_id ?? (data as any).created_by }
+    const normalized = {
+      ...(data as any),
+      requester_id: (data as any).requester_id ?? (data as any).created_by,
+      priority: fromDbPriority((data as any).priority),
+    }
     return normalized
   },
 
