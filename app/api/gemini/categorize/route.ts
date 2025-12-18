@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const jsonStr = response.text.trim()
+    const jsonStr = (response.text || "{}").trim()
     const result = JSON.parse(jsonStr)
 
     return NextResponse.json(result)

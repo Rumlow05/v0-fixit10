@@ -31,6 +31,7 @@ interface MockSupabaseClient {
       eq: (column: string, value: any) => Promise<{ error: null }>
     }
   }
+  rpc: (functionName: string, params?: any) => Promise<{ data: any; error: null }>
 }
 
 // Mock data - usando localStorage para persistencia
@@ -177,7 +178,15 @@ function createMockClient(): MockSupabaseClient {
             return { data: getMockUsers(), error: null }
           }
           if (table === "tickets") {
-            return { data: getMockTickets(), error: null }
+            const tickets = getMockTickets()
+            const users = getMockUsers()
+            // Simular joins
+            const ticketsWithJoins = tickets.map(t => ({
+              ...t,
+              assigned_user: t.assigned_to ? users.find((u: any) => u.id === t.assigned_to) : null,
+              creator: (t.requester_id || t.created_by) ? users.find((u: any) => u.id === (t.requester_id || t.created_by)) : null
+            }))
+            return { data: ticketsWithJoins, error: null }
           }
           return { data: [], error: null }
         },
@@ -191,8 +200,18 @@ function createMockClient(): MockSupabaseClient {
             }
             if (table === "tickets") {
               const tickets = getMockTickets()
+              const users = getMockUsers()
               const ticket = tickets.find((t) => t[column as keyof typeof t] === value)
-              return { data: ticket || null, error: null }
+              
+              if (ticket) {
+                const ticketWithJoins = {
+                  ...ticket,
+                  assigned_user: ticket.assigned_to ? users.find((u: any) => u.id === ticket.assigned_to) : null,
+                  creator: (ticket.requester_id || ticket.created_by) ? users.find((u: any) => u.id === (ticket.requester_id || ticket.created_by)) : null
+                }
+                return { data: ticketWithJoins, error: null }
+              }
+              return { data: null, error: null }
             }
             return { data: null, error: null }
           },
@@ -247,7 +266,15 @@ function createMockClient(): MockSupabaseClient {
                 if (ticketIndex >= 0) {
                   tickets[ticketIndex] = { ...tickets[ticketIndex], ...data }
                   saveMockTickets(tickets)
-                  return { data: tickets[ticketIndex], error: null }
+                  
+                  const users = getMockUsers()
+                  const updatedTicket = tickets[ticketIndex]
+                  const ticketWithJoins = {
+                    ...updatedTicket,
+                    assigned_user: updatedTicket.assigned_to ? users.find((u: any) => u.id === updatedTicket.assigned_to) : null,
+                    creator: (updatedTicket.requester_id || updatedTicket.created_by) ? users.find((u: any) => u.id === (updatedTicket.requester_id || updatedTicket.created_by)) : null
+                  }
+                  return { data: ticketWithJoins, error: null }
                 }
               }
               return { data: null, error: null }
@@ -280,6 +307,22 @@ function createMockClient(): MockSupabaseClient {
         },
       }),
     }),
+    rpc: async (functionName: string, params?: any) => {
+      console.log(`[v0] Mock RPC call: ${functionName}`, params)
+      if (functionName === 'delete_user_bypass_rls') {
+        const { user_id } = params
+        const users = getMockUsers()
+        const userIndex = users.findIndex((u) => u.id === user_id)
+        if (userIndex >= 0) {
+          const deletedUser = users[userIndex]
+          users.splice(userIndex, 1)
+          saveMockUsers(users)
+          return { data: [deletedUser], error: null }
+        }
+        return { data: [], error: null }
+      }
+      return { data: null, error: null }
+    },
   }
 }
 

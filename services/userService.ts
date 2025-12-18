@@ -227,10 +227,15 @@ export async function deleteUser(id: string): Promise<void> {
     .update({ assigned_to: null })
     .eq("assigned_to", id)
   
-  const { error: updateRequesterError } = await supabase
+  // Intentar actualizar tickets creados por el usuario (asignar al admin)
+  const { error: updateCreatedByError } = await supabase
     .from("tickets")
-    .update({ requester_id: "2af4b6bf-01fe-4b9f-9611-35178dc75c30" })
-    .eq("requester_id", id)
+    .update({ created_by: "2af4b6bf-01fe-4b9f-9611-35178dc75c30" })
+    .eq("created_by", id)
+  
+  if (updateCreatedByError) {
+    console.warn("[v0] Server-side: Warning updating ticket creators:", updateCreatedByError)
+  }
   
   const { error: deleteCommentsError } = await supabase
     .from("comments")
@@ -333,7 +338,7 @@ export const userServiceClient = {
       console.log("[v0] Client-side getAllUsers: Successfully fetched users:", data?.length || 0)
       console.log("[v0] Client-side getAllUsers: Users data:", data)
 
-      return (data || []).map((user) => ({
+      return (data || []).map((user: any) => ({
         ...user,
         role: getRoleEnumValue(user.role),
       }))

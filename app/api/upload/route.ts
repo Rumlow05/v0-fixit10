@@ -19,6 +19,12 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Upload API] Subiendo archivo: ${filename} para ticket: ${ticketId}`);
 
+    if (!request.body) {
+      return NextResponse.json({ 
+        error: 'No file body provided' 
+      }, { status: 400 });
+    }
+
     // Subir archivo a Vercel Blob
     const blob = await put(filename, request.body, {
       access: 'public',
@@ -27,15 +33,12 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Upload API] Archivo subido exitosamente:`, {
       url: blob.url,
-      pathname: blob.pathname,
-      size: blob.size
+      pathname: blob.pathname
     });
 
     return NextResponse.json({
       url: blob.url,
-      pathname: blob.pathname,
-      size: blob.size,
-      uploadedAt: blob.uploadedAt
+      pathname: blob.pathname
     });
   } catch (error) {
     console.error('[Upload API] Error subiendo archivo:', error);

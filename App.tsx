@@ -6,7 +6,7 @@ import { type Ticket, type User, Role, Status, Priority } from "./types"
 import { suggestSolution, generateAdminReport } from "./services/geminiService"
 
 import { userServiceClient } from "./services/userService"
-import { ticketServiceClient } from "./services/ticketService"
+import { ticketServiceClient } from "./services/ticketServiceClient"
 // import { attachmentServiceClient } from "./services/attachmentService" // DESHABILITADO TEMPORALMENTE
 import { syncService, createUserEvent, createTicketEvent } from "./services/syncService"
 import { useNotifications } from "./hooks/useNotifications"
