@@ -8,9 +8,7 @@ export function createClient() {
     return createSupabaseClient(supabaseUrl, supabaseAnonKey)
   }
   
-  // Si no hay variables de entorno, retornamos null o lanzamos error.
-  // En un entorno de servidor real, no podemos usar el mock basado en localStorage.
-  // Retornamos un cliente dummy que no hace nada o null.
-  console.warn("[v0] Server client: Missing Supabase environment variables.")
-  return null
+  // Si no hay variables de entorno, lanzamos un error para asegurar que siempre retornamos un cliente válido
+  // o fallamos explícitamente. Esto arregla los errores de tipo "possibly null".
+  throw new Error("Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY) are missing.")
 }
