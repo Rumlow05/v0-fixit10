@@ -4111,15 +4111,13 @@ const App: React.FC = () => {
             onConnect={handleWhatsAppConnect}
             onDisconnect={handleWhatsAppDisconnect}
           />
-          {/* AttachmentViewer - DESHABILITADO TEMPORALMENTE */}
-          {/*
+          {/* AttachmentViewer */}
           <AttachmentViewer
             isOpen={isAttachmentViewerOpen}
             onClose={() => setIsAttachmentViewerOpen(false)}
             ticketId={selectedTicket?.id || ""}
             currentUser={currentUser}
           />
-          */}
         </div>
       )}
       
