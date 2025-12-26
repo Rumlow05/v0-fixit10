@@ -10,7 +10,10 @@ interface WhatsAppTicketData {
   // Campos obligatorios
   title: string
   description: string
-  whatsapp_user_id: string // remoteJid del usuario de WhatsApp
+  
+  // Identificación del usuario (una de las dos opciones)
+  whatsapp_user_id?: string // remoteJid del usuario de WhatsApp
+  requester_email?: string // Email del usuario registrado en el sistema
   whatsapp_user_name?: string // Nombre del usuario si está disponible
   
   // Campos opcionales con valores por defecto
@@ -52,10 +55,10 @@ export async function POST(request: NextRequest) {
     const ticketData: WhatsAppTicketData = await request.json()
 
     // Validar campos obligatorios
-    if (!ticketData.title || !ticketData.description || !ticketData.whatsapp_user_id) {
+    if (!ticketData.title || !ticketData.description || (!ticketData.whatsapp_user_id && !ticketData.requester_email)) {
       return NextResponse.json({ 
         error: "Campos obligatorios faltantes",
-        required: ["title", "description", "whatsapp_user_id"],
+        required: ["title", "description", "whatsapp_user_id OR requester_email"],
         received: Object.keys(ticketData)
       }, { status: 400 })
     }
@@ -66,11 +69,27 @@ export async function POST(request: NextRequest) {
       // Por simplicidad, asumimos que el bot maneja la idempotencia
     }
 
-    // Buscar o crear usuario basado en WhatsApp ID
-    let userId = await findOrCreateWhatsAppUser(
-      ticketData.whatsapp_user_id, 
-      ticketData.whatsapp_user_name
-    )
+    // Buscar usuario por email o crear usuario basado en WhatsApp ID
+    let userId: string
+    
+    if (ticketData.requester_email) {
+      // Buscar usuario existente por email
+      const foundUserId = await findUserByEmail(ticketData.requester_email)
+      if (!foundUserId) {
+        return NextResponse.json({ 
+          error: "Usuario no encontrado",
+          message: `No se encontró un usuario registrado con el email: ${ticketData.requester_email}`,
+          suggestion: "Verifica que el usuario esté registrado en el sistema FixIT"
+        }, { status: 404 })
+      }
+      userId = foundUserId
+    } else {
+      // Crear usuario basado en WhatsApp ID (comportamiento anterior)
+      userId = await findOrCreateWhatsAppUser(
+        ticketData.whatsapp_user_id!, 
+        ticketData.whatsapp_user_name
+      )
+    }
 
     // Preparar datos del ticket
     const createTicketPayload = {
@@ -99,7 +118,7 @@ export async function POST(request: NextRequest) {
           status: ticket.status,
           createdBy: user.name,
           createdAt: ticket.created_at,
-          phoneNumber: user.phone // Para WhatsApp
+          phoneNumber: (user as any).phone // Para WhatsApp
         }, user.email)
       }
     } catch (emailError) {
@@ -138,7 +157,13 @@ export async function POST(request: NextRequest) {
 // Función auxiliar para construir descripción del ticket
 function buildTicketDescription(data: WhatsAppTicketData): string {
   let description = `📱 *Ticket creado desde WhatsApp*\n\n`
-  description += `👤 *Usuario:* ${data.whatsapp_user_name || data.whatsapp_user_id}\n`
+  
+  if (data.requester_email) {
+    description += `👤 *Usuario:* ${data.requester_email}\n`
+  } else {
+    description += `👤 *Usuario WhatsApp:* ${data.whatsapp_user_name || data.whatsapp_user_id}\n`
+  }
+  
   description += `📝 *Descripción original:*\n${data.description}\n\n`
   
   if (data.ai_summary) {
@@ -182,6 +207,26 @@ function mapPriority(priority: string): Priority {
   }
   
   return priorityMap[priority.toLowerCase()] || Priority.MEDIUM
+}
+
+// Función auxiliar para buscar usuario por email
+async function findUserByEmail(email: string): Promise<string | null> {
+  try {
+    const { userServiceClient } = await import("@/services/userService")
+    const users = await userServiceClient.getAllUsers()
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase())
+    
+    if (user) {
+      console.log(`[WhatsApp API] Usuario encontrado por email: ${email} -> ${user.id}`)
+      return user.id
+    }
+    
+    console.log(`[WhatsApp API] Usuario no encontrado por email: ${email}`)
+    return null
+  } catch (error) {
+    console.error("[WhatsApp API] Error buscando usuario por email:", error)
+    return null
+  }
 }
 
 // Función auxiliar para encontrar o crear usuario de WhatsApp
