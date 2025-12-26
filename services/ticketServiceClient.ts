@@ -34,11 +34,11 @@ export interface UpdateTicketData {
 }
 
 export const ticketServiceClient = {
-  async getAllTickets(): Promise<Ticket[]> {
+  async fallbackToMockClient(): Promise<Ticket[]> {
+    console.log("[v0] Attempting fallback to mock client...")
     try {
-      const supabase = createClient()
-
-      const { data, error } = await supabase
+      const mockSupabase = createMockClient()
+      const { data: mockData, error: mockError } = await mockSupabase
         .from("tickets")
         .select(`
           *,
@@ -47,35 +47,78 @@ export const ticketServiceClient = {
         `)
         .order("created_at", { ascending: false })
 
+      if (mockError) {
+         console.error("[v0] Mock client also failed:", mockError)
+         return []
+      }
+
+      const normalized = (mockData || []).map((t: any) => ({
+        ...t,
+        requester_id: t.requester_id ?? t.created_by,
+        priority: fromDbPriority(t.priority),
+      }))
+      return normalized
+    } catch (mockCatchError) {
+       console.error("[v0] Mock client exception:", mockCatchError)
+       return []
+    }
+  },
+  async getAllTickets(): Promise<Ticket[]> {
+    try {
+      const supabase = createClient()
+
+      // Intentar primero con las relaciones
+      let { data, error } = await supabase
+        .from("tickets")
+        .select(`
+          *,
+          assigned_user:assigned_to(name, email),
+          creator:created_by(name, email)
+        `)
+        .order("created_at", { ascending: false })
+
+      // Si hay error de relación, intentar sin las relaciones y hacer joins manuales
+      if (error && error.message?.includes("relationship")) {
+        console.warn("[v0] Relationship error, trying manual joins:", error.message)
+        
+        // Obtener tickets sin relaciones
+        const { data: ticketsData, error: ticketsError } = await supabase
+          .from("tickets")
+          .select("*")
+          .order("created_at", { ascending: false })
+
+        if (ticketsError) {
+          console.error("[v0] Error fetching tickets without relations:", ticketsError)
+          return this.fallbackToMockClient()
+        }
+
+        // Obtener todos los usuarios para hacer join manual
+        const { data: usersData, error: usersError } = await supabase
+          .from("users")
+          .select("id, name, email")
+
+        if (usersError) {
+          console.error("[v0] Error fetching users:", usersError)
+          return this.fallbackToMockClient()
+        }
+
+        // Hacer join manual
+        data = (ticketsData || []).map((ticket: any) => ({
+          ...ticket,
+          assigned_user: ticket.assigned_to 
+            ? usersData?.find((u: any) => u.id === ticket.assigned_to) || null
+            : null,
+          creator: ticket.created_by 
+            ? usersData?.find((u: any) => u.id === ticket.created_by) || null
+            : null
+        }))
+        
+        error = null // Limpiar el error ya que lo resolvimos
+      }
+
       if (error) {
         console.error("[v0] Error fetching tickets:", error)
-        console.log("[v0] Attempting fallback to mock client...")
-        try {
-          const mockSupabase = createMockClient()
-          const { data: mockData, error: mockError } = await mockSupabase
-            .from("tickets")
-            .select(`
-              *,
-              assigned_user:assigned_to(name, email),
-              creator:created_by(name, email)
-            `)
-            .order("created_at", { ascending: false })
-
-          if (mockError) {
-             console.error("[v0] Mock client also failed:", mockError)
-             return []
-          }
-
-          const normalized = (mockData || []).map((t: any) => ({
-            ...t,
-            requester_id: t.requester_id ?? t.created_by,
-            priority: fromDbPriority(t.priority),
-          }))
-          return normalized
-        } catch (mockCatchError) {
-           console.error("[v0] Mock client exception:", mockCatchError)
-           return []
-        }
+        return this.fallbackToMockClient()
       }
 
       const normalized = (data || []).map((t: any) => ({
@@ -132,7 +175,8 @@ export const ticketServiceClient = {
       external_contact: ticketData.external_contact ?? null,
     }
 
-    const { data, error } = await supabase
+    // Intentar primero con las relaciones
+    let { data, error } = await supabase
       .from("tickets")
       .insert([payload])
       .select(`
@@ -141,6 +185,42 @@ export const ticketServiceClient = {
         creator:created_by(name, email)
       `)
       .single()
+
+    // Si hay error de relación, intentar sin las relaciones y hacer joins manuales
+    if (error && error.message?.includes("relationship")) {
+      console.warn("[v0] Relationship error in createTicket, trying without relations:", error.message)
+      
+      // Crear ticket sin relaciones
+      const { data: ticketData, error: ticketError } = await supabase
+        .from("tickets")
+        .insert([payload])
+        .select("*")
+        .single()
+
+      if (ticketError) {
+        console.error("[v0] Error creating ticket without relations:", ticketError)
+      } else {
+        // Obtener usuarios relacionados para hacer join manual
+        const userIds = [ticketData.assigned_to, ticketData.created_by].filter(Boolean)
+        const { data: usersData } = await supabase
+          .from("users")
+          .select("id, name, email")
+          .in("id", userIds)
+
+        // Hacer join manual
+        data = {
+          ...ticketData,
+          assigned_user: ticketData.assigned_to 
+            ? usersData?.find((u: any) => u.id === ticketData.assigned_to) || null
+            : null,
+          creator: ticketData.created_by 
+            ? usersData?.find((u: any) => u.id === ticketData.created_by) || null
+            : null
+        }
+        
+        error = null // Limpiar el error ya que lo resolvimos
+      }
+    }
 
     if (error) {
       console.error("[v0] Error creating ticket:", error)
