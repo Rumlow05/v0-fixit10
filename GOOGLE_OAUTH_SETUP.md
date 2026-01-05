@@ -44,11 +44,18 @@ Esta guía te ayudará a configurar el inicio de sesión con Google en FixIT usa
    - Asigna un nombre (ej: "FixIT Web Client")
    - En **"Authorized redirect URIs"**, agrega:
      ```
-     http://localhost:3000/api/auth/callback
+     https://[tu-proyecto].supabase.co/auth/v1/callback
      ```
-     Para producción, agrega también:
+     ⚠️ **IMPORTANTE**: Debes usar el callback de Supabase, NO el de tu aplicación.
+     Para encontrar tu URL de Supabase:
+     - Ve a tu proyecto en Supabase Dashboard
+     - Ve a Settings > API
+     - La URL de tu proyecto será algo como: `https://abcdefghijklmnop.supabase.co`
+     - El redirect_uri será: `https://abcdefghijklmnop.supabase.co/auth/v1/callback`
+     
+     Ejemplo real:
      ```
-     https://tu-dominio.com/api/auth/callback
+     https://nypgidkcccagsdsgissl.supabase.co/auth/v1/callback
      ```
    - Haz clic en **"Create"**
    - **IMPORTANTE**: Copia el **Client ID** y **Client Secret** (solo se muestran una vez)
@@ -101,10 +108,12 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000  # Para desarrollo
 
 ### Error: "redirect_uri_mismatch"
 - **Causa**: La URL de callback no coincide con la configurada en Google Cloud Console
-- **Solución**: Verifica que la URL en Google Cloud Console sea exactamente:
-  - Desarrollo: `http://localhost:3000/api/auth/callback`
-  - Producción: `https://tu-dominio.com/api/auth/callback`
-  - Asegúrate de incluir el protocolo (`http://` o `https://`) y no agregar barras finales
+- **Solución**: ⚠️ **DEBES usar el callback de Supabase**, NO el de tu aplicación:
+  - La URL correcta es: `https://[tu-proyecto].supabase.co/auth/v1/callback`
+  - Para encontrar tu URL de Supabase: Ve a Settings > API en tu dashboard de Supabase
+  - Ejemplo: `https://nypgidkcccagsdsgissl.supabase.co/auth/v1/callback`
+  - Asegúrate de incluir el protocolo `https://` y no agregar barras finales
+  - **NO uses** `http://localhost:3000/api/auth/callback` en Google Cloud Console
 
 ### Error: "invalid_client"
 - **Causa**: Las credenciales (Client ID o Client Secret) son incorrectas

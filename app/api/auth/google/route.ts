@@ -4,20 +4,26 @@ import { createClient } from '@/lib/supabase/server'
 /**
  * Endpoint para iniciar el proceso de login con Google
  * Redirige al usuario a la página de autenticación de Google
+ * 
+ * IMPORTANTE: En Google Cloud Console, el redirect_uri debe ser:
+ * https://[tu-proyecto].supabase.co/auth/v1/callback
+ * NO el callback de nuestra aplicación
  */
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
     
     // Obtener la URL de redirección después del login
-    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    // Esta será la URL a la que Supabase redirigirá después de autenticar
+    const origin = request.headers.get('origin') || request.headers.get('referer')?.split('/').slice(0, 3).join('/') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const redirectUrl = `${origin}/api/auth/callback`
     
     // Iniciar el proceso de OAuth con Google
+    // Supabase manejará el callback inicial, luego redirigirá a redirectUrl
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: redirectUrl,
+        redirectTo: redirectUrl, // URL a la que Supabase redirigirá después de autenticar
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
