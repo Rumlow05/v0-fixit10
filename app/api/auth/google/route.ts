@@ -18,8 +18,11 @@ export async function GET(request: NextRequest) {
     
     // Obtener la URL de redirección después del login
     // Esta será la URL a la que Supabase redirigirá después de autenticar
+    // Necesitamos construir la URL completa con el protocolo y dominio
     const origin = request.headers.get('origin') || request.headers.get('referer')?.split('/').slice(0, 3).join('/') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const redirectUrl = `${origin}/auth/callback`
+    
+    console.log('[Auth] Iniciando OAuth con redirectTo:', redirectUrl)
     
     // Iniciar el proceso de OAuth con Google
     // Supabase manejará el callback inicial, luego redirigirá a redirectUrl
@@ -31,6 +34,7 @@ export async function GET(request: NextRequest) {
           access_type: 'offline',
           prompt: 'consent',
         },
+        skipBrowserRedirect: false,
       },
     })
 

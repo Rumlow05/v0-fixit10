@@ -2805,7 +2805,7 @@ const App: React.FC = () => {
     return () => clearInterval(cleanupInterval)
   }, [])
 
-  // Manejar callback de Google OAuth
+  // Manejar callback de Google OAuth desde URL params
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
@@ -2860,6 +2860,16 @@ const App: React.FC = () => {
       }
     }
   }, [users, showSuccess])
+
+  // Manejar tokens de Google OAuth que vienen en hash fragment (cuando Supabase redirige a /)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname === '/' && window.location.hash.includes('access_token')) {
+      // Si estamos en la raíz con tokens en el hash, redirigir a /auth/callback
+      console.log('[v0] Detectados tokens de OAuth en hash, redirigiendo a /auth/callback')
+      window.location.href = '/auth/callback' + window.location.hash
+      return
+    }
+  }, [])
 
   // --- Effects for Data Persistence ---
   useEffect(() => {
