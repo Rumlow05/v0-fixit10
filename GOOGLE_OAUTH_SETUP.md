@@ -101,8 +101,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000  # Para desarrollo
    - Ve a la página de login
    - Haz clic en "Continuar con Google"
    - Deberías ser redirigido a Google para autenticarte
-   - Después de autenticarte, serás redirigido de vuelta a la aplicación
+   - Después de autenticarte, serás redirigido a `/auth/callback` donde se procesará la autenticación
    - Si el usuario no existe, se creará automáticamente con rol "Usuario"
+   - Finalmente serás redirigido a la página principal con tu sesión iniciada
 
 ## 🔍 Solución de Problemas
 
