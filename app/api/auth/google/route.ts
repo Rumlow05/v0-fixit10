@@ -19,10 +19,22 @@ export async function GET(request: NextRequest) {
     // Obtener la URL de redirección después del login
     // Esta será la URL a la que Supabase redirigirá después de autenticar
     // Necesitamos construir la URL completa con el protocolo y dominio
-    const origin = request.headers.get('origin') || request.headers.get('referer')?.split('/').slice(0, 3).join('/') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const host = request.headers.get('host') || request.headers.get('x-forwarded-host')
+    const protocol = request.headers.get('x-forwarded-proto') || (request.headers.get('host')?.includes('localhost') ? 'http' : 'https')
+    
+    // Construir la URL base
+    let origin: string
+    if (host) {
+      origin = `${protocol}://${host}`
+    } else {
+      // Fallback: usar NEXT_PUBLIC_APP_URL o localhost para desarrollo
+      origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    }
+    
     const redirectUrl = `${origin}/auth/callback`
     
     console.log('[Auth] Iniciando OAuth con redirectTo:', redirectUrl)
+    console.log('[Auth] Host:', host, 'Protocol:', protocol, 'Origin:', origin)
     
     // Iniciar el proceso de OAuth con Google
     // Supabase manejará el callback inicial, luego redirigirá a redirectUrl
