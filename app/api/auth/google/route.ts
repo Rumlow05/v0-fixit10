@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Forzar que esta ruta sea dinámica (no estática) porque usa request.headers
+export const dynamic = 'force-dynamic'
+
 /**
  * Endpoint para iniciar el proceso de login con Google
  * Redirige al usuario a la página de autenticación de Google

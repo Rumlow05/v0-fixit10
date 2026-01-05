@@ -1,18 +1,16 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { userServiceClient } from '@/services/userService'
 import { Role } from '@/types'
 
 /**
- * Página de callback para manejar la respuesta de Google OAuth
- * Esta página maneja los tokens que vienen en el hash fragment (#access_token=...)
+ * Componente interno que maneja la lógica del callback
  */
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
