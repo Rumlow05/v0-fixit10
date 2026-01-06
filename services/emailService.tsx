@@ -387,6 +387,73 @@ class EmailService {
       text: `¡Bienvenido a FixIT, ${userName}! Tu cuenta ha sido creada exitosamente.`,
     })
   }
+
+  /**
+   * Envía un código de verificación OTP por email
+   * @param userEmail Email del usuario
+   * @param code Código OTP de 6 dígitos
+   * @returns true si se envió exitosamente, false en caso contrario
+   */
+  async sendVerificationCode(userEmail: string, code: string): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+            .code-box { background: white; padding: 30px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px dashed #10b981; }
+            .code { font-size: 32px; font-weight: bold; color: #10b981; letter-spacing: 8px; font-family: 'Courier New', monospace; }
+            .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px; }
+            .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 6px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Código de Verificación</h1>
+            </div>
+            <div class="content">
+              <p>Hola,</p>
+              <p>Has solicitado iniciar sesión en <strong>FixIT</strong>. Utiliza el siguiente código para completar tu inicio de sesión:</p>
+              
+              <div class="code-box">
+                <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Tu código de verificación es:</p>
+                <div class="code">${code}</div>
+              </div>
+              
+              <div class="warning">
+                <p style="margin: 0;"><strong>⚠️ Importante:</strong></p>
+                <ul style="margin: 10px 0 0 20px; padding: 0;">
+                  <li>Este código expira en 10 minutos</li>
+                  <li>No compartas este código con nadie</li>
+                  <li>Si no solicitaste este código, ignora este email</li>
+                </ul>
+              </div>
+              
+              <p>Si no solicitaste este código, puedes ignorar este mensaje de forma segura.</p>
+            </div>
+            <div class="footer">
+              <p>Este es un mensaje automático del sistema FixIT</p>
+              <p>Por seguridad, nunca compartiremos tu código de verificación por otros medios.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+
+    const text = `Código de verificación FixIT\n\nTu código de verificación es: ${code}\n\nEste código expira en 10 minutos. Si no solicitaste este código, ignora este mensaje.`
+
+    return await this.sendEmail({
+      to: userEmail,
+      subject: '[FixIT] Código de Verificación para Inicio de Sesión',
+      html,
+      text,
+    })
+  }
 }
 
 export const emailService = new EmailService()
