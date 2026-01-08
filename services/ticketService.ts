@@ -105,7 +105,7 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
     description: ticketData.description,
     priority: toDbPriority(ticketData.priority),
     status: Status.OPEN,
-    category: ticketData.category,
+    category: ticketData.category || 'Otro', // Categoría por defecto si no se proporciona
     assigned_to: ticketData.assigned_to ?? null,
     created_by: ticketData.requester_id,
     origin: ticketData.origin ?? 'Interna',
@@ -113,7 +113,8 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
     external_contact: ticketData.external_contact ?? null,
   }
 
-  const { data, error } = await supabase
+  // Intentar primero con las relaciones
+  let { data, error } = await supabase
     .from("tickets")
     .insert([payload])
     .select(`
@@ -122,6 +123,48 @@ export async function createTicket(ticketData: CreateTicketData): Promise<Ticket
       creator:created_by(name, email)
     `)
     .single()
+
+  // Si hay error, intentar sin las relaciones y hacer joins manuales
+  if (error) {
+    console.warn("[v0] Error in createTicket (server), trying without relations:", error.message, "code:", error.code)
+    
+    // Crear ticket sin relaciones
+    const { data: ticketDataWithoutRelations, error: ticketError } = await supabase
+      .from("tickets")
+      .insert([payload])
+      .select("*")
+      .single()
+
+    if (ticketError) {
+      console.error("[v0] Error creating ticket without relations (server):", ticketError)
+      throw new Error("Error al crear ticket")
+    }
+
+    // Obtener usuarios relacionados para hacer join manual
+    const userIds = [ticketDataWithoutRelations.assigned_to, ticketDataWithoutRelations.created_by].filter(Boolean)
+    let usersData: any[] = []
+    
+    if (userIds.length > 0) {
+      const { data: users } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .in("id", userIds)
+      usersData = users || []
+    }
+
+    // Hacer join manual
+    data = {
+      ...ticketDataWithoutRelations,
+      assigned_user: ticketDataWithoutRelations.assigned_to 
+        ? usersData.find((u: any) => u.id === ticketDataWithoutRelations.assigned_to) || null
+        : null,
+      creator: ticketDataWithoutRelations.created_by 
+        ? usersData.find((u: any) => u.id === ticketDataWithoutRelations.created_by) || null
+        : null
+    }
+    
+    error = null // Limpiar el error ya que lo resolvimos
+  }
 
   if (error) {
     console.error("[v0] Error creating ticket:", error)

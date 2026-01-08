@@ -167,7 +167,7 @@ export const ticketServiceClient = {
       description: ticketData.description,
       priority: toDbPriority(ticketData.priority),
       status: Status.OPEN,
-      category: ticketData.category,
+      category: ticketData.category || 'Otro', // Categoría por defecto si no se proporciona
       assigned_to: ticketData.assigned_to ?? null,
       created_by: ticketData.requester_id,
       origin: ticketData.origin ?? 'Interna',
@@ -186,12 +186,12 @@ export const ticketServiceClient = {
       `)
       .single()
 
-    // Si hay error de relación, intentar sin las relaciones y hacer joins manuales
-    if (error && error.message?.includes("relationship")) {
-      console.warn("[v0] Relationship error in createTicket, trying without relations:", error.message)
+    // Si hay error (de relación o cualquier otro), intentar sin las relaciones y hacer joins manuales
+    if (error) {
+      console.warn("[v0] Error in createTicket, trying without relations:", error.message, "code:", error.code)
       
       // Crear ticket sin relaciones
-      const { data: ticketData, error: ticketError } = await supabase
+      const { data: ticketDataWithoutRelations, error: ticketError } = await supabase
         .from("tickets")
         .insert([payload])
         .select("*")
@@ -199,22 +199,28 @@ export const ticketServiceClient = {
 
       if (ticketError) {
         console.error("[v0] Error creating ticket without relations:", ticketError)
+        // Continuar con el error original para que se maneje en el bloque de error
       } else {
         // Obtener usuarios relacionados para hacer join manual
-        const userIds = [ticketData.assigned_to, ticketData.created_by].filter(Boolean)
-        const { data: usersData } = await supabase
-          .from("users")
-          .select("id, name, email")
-          .in("id", userIds)
+        const userIds = [ticketDataWithoutRelations.assigned_to, ticketDataWithoutRelations.created_by].filter(Boolean)
+        let usersData: any[] = []
+        
+        if (userIds.length > 0) {
+          const { data: users } = await supabase
+            .from("users")
+            .select("id, name, email")
+            .in("id", userIds)
+          usersData = users || []
+        }
 
         // Hacer join manual
         data = {
-          ...ticketData,
-          assigned_user: ticketData.assigned_to 
-            ? usersData?.find((u: any) => u.id === ticketData.assigned_to) || null
+          ...ticketDataWithoutRelations,
+          assigned_user: ticketDataWithoutRelations.assigned_to 
+            ? usersData.find((u: any) => u.id === ticketDataWithoutRelations.assigned_to) || null
             : null,
-          creator: ticketData.created_by 
-            ? usersData?.find((u: any) => u.id === ticketData.created_by) || null
+          creator: ticketDataWithoutRelations.created_by 
+            ? usersData.find((u: any) => u.id === ticketDataWithoutRelations.created_by) || null
             : null
         }
         

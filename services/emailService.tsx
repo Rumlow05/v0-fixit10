@@ -10,7 +10,14 @@ interface EmailOptions {
 // Función para enviar notificación por WhatsApp
 const sendWhatsAppNotification = async (phoneNumber: string, ticketData: any, type: string) => {
   try {
-    const response = await fetch('/api/whatsapp/send-notification', {
+    // Determinar la URL base según el entorno
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : process.env.NEXT_PUBLIC_APP_URL || 'https://dashboard.emprendetucarrera.com.co';
+    
+    const apiUrl = `${baseUrl}/api/whatsapp/send-notification`;
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,6 +43,7 @@ const sendWhatsAppNotification = async (phoneNumber: string, ticketData: any, ty
     }
   } catch (error) {
     console.error('[EmailService] Error enviando notificación WhatsApp:', error);
+    // No lanzar error, solo loguear para no interrumpir el flujo de email
   }
 }
 

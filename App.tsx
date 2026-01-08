@@ -3783,7 +3783,7 @@ const App: React.FC = () => {
         title: ticketData.title,
         description: ticketData.description,
         priority: ticketData.priority,
-        category: ticketData.category,
+        category: ticketData.category || 'Otro', // Categoría por defecto si no se proporciona
         assigned_to: ticketData.assigned_to,
         requester_id: currentUser?.id,
         origin: ticketData.origin || 'Interna',

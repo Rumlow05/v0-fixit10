@@ -25,7 +25,8 @@ export const activityService = {
   async createActivity(activityData: CreateActivityData): Promise<ActivityEvent> {
     const supabase = createClient()
 
-    const { data, error } = await supabase
+    // Intentar primero con la relación
+    let { data, error } = await supabase
       .from("activity_log")
       .insert([activityData])
       .select(`
@@ -33,6 +34,36 @@ export const activityService = {
         user:user_id(name, email)
       `)
       .single()
+
+    // Si hay error de relación, intentar sin la relación y hacer join manual
+    if (error && (error.message?.includes("relationship") || error.code === "400" || error.code === "PGRST116")) {
+      console.warn("[v0] Relationship error in createActivity, trying without relation:", error.message)
+      
+      // Crear actividad sin relación
+      const { data: activityDataResult, error: activityError } = await supabase
+        .from("activity_log")
+        .insert([activityData])
+        .select("*")
+        .single()
+
+      if (activityError) {
+        console.error("[v0] Error creating activity without relation:", activityError)
+        throw new Error("Error al crear actividad")
+      }
+
+      // Obtener usuario para hacer join manual
+      const { data: userData } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .eq("id", activityData.user_id)
+        .single()
+
+      data = {
+        ...activityDataResult,
+        user: userData || null
+      }
+      error = null // Limpiar el error ya que lo resolvimos
+    }
 
     if (error) {
       console.error("[v0] Error creating activity:", error)
