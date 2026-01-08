@@ -155,41 +155,9 @@ export async function POST(request: NextRequest) {
 }
 
 // Función auxiliar para construir descripción del ticket
+// Muestra exactamente lo que viene en el campo description
 function buildTicketDescription(data: WhatsAppTicketData): string {
-  let description = `📱 *Ticket creado desde WhatsApp*\n\n`
-  
-  if (data.requester_email) {
-    description += `👤 *Usuario:* ${data.requester_email}\n`
-  } else {
-    description += `👤 *Usuario WhatsApp:* ${data.whatsapp_user_name || data.whatsapp_user_id}\n`
-  }
-  
-  description += `📝 *Descripción original:*\n${data.description}\n\n`
-  
-  if (data.ai_summary) {
-    description += `🤖 *Resumen de IA:*\n${data.ai_summary}\n\n`
-  }
-  
-  if (data.attachments && data.attachments.length > 0) {
-    description += `📎 *Adjuntos:*\n`
-    data.attachments.forEach((att, index) => {
-      description += `${index + 1}. Tipo: ${att.type}`
-      if (att.content) description += ` - Contenido: ${att.content.substring(0, 100)}...`
-      if (att.url) description += ` - URL: ${att.url}`
-      description += `\n`
-    })
-    description += `\n`
-  }
-  
-  if (data.timestamp) {
-    description += `⏰ *Timestamp:* ${new Date(data.timestamp).toLocaleString('es-CO', { timeZone: 'America/Bogota' })}\n`
-  }
-  
-  if (data.message_id) {
-    description += `🔗 *Message ID:* ${data.message_id}\n`
-  }
-  
-  return description
+  return data.description || ''
 }
 
 // Función auxiliar para mapear prioridades
