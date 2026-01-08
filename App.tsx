@@ -732,9 +732,32 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
     priority: Priority.MEDIUM,
     origin: 'Interna' as 'Interna' | 'Externa',
     external_company: "",
-    external_contact: ""
+    external_contact: "",
+    requester_id: "" // ID del usuario seleccionado cuando es interna
   })
   const [attachments, setAttachments] = useState<File[]>([])
+  const [availableUsers, setAvailableUsers] = useState<User[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+
+  // Cargar usuarios cuando el modal se abre y el origen es interna (para personal TIC)
+  useEffect(() => {
+    if (isOpen && currentUser && currentUser.role !== Role.USER && formData.origin === 'Interna') {
+      loadUsers()
+    }
+  }, [isOpen, formData.origin, currentUser])
+
+  // Cargar usuarios del sistema
+  const loadUsers = async () => {
+    setLoadingUsers(true)
+    try {
+      const users = await userServiceClient.getAllUsers()
+      setAvailableUsers(users)
+    } catch (error) {
+      console.error("[CreateTicketModal] Error loading users:", error)
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -744,9 +767,11 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
         priority: Priority.MEDIUM,
         origin: 'Interna' as 'Interna' | 'Externa',
         external_company: "",
-        external_contact: ""
+        external_contact: "",
+        requester_id: ""
       })
       setAttachments([])
+      setAvailableUsers([])
     }
   }, [isOpen])
 
@@ -758,6 +783,11 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
       // Validar campos condicionales para tickets externos
       if (formData.origin === 'Externa' && (!formData.external_company?.trim() || !formData.external_contact?.trim())) {
         alert("Por favor completa el nombre del aliado y el solicitante")
+        return
+      }
+      // Validar que se haya seleccionado un solicitante cuando es interna y es personal TIC
+      if (currentUser && currentUser.role !== Role.USER && formData.origin === 'Interna' && !formData.requester_id) {
+        alert("Por favor selecciona un solicitante")
         return
       }
       onCreate({ ...formData, attachments })
@@ -843,11 +873,20 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
               <select
                 id="origin"
                 value={formData.origin}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  origin: e.target.value as 'Interna' | 'Externa',
-                  external_company: e.target.value === 'Interna' ? "" : formData.external_company
-                })}
+                onChange={(e) => {
+                  const newOrigin = e.target.value as 'Interna' | 'Externa'
+                  setFormData({ 
+                    ...formData, 
+                    origin: newOrigin,
+                    external_company: newOrigin === 'Interna' ? "" : formData.external_company,
+                    external_contact: newOrigin === 'Interna' ? "" : formData.external_contact,
+                    requester_id: newOrigin === 'Externa' ? "" : formData.requester_id
+                  })
+                  // Si cambia a interna, cargar usuarios
+                  if (newOrigin === 'Interna') {
+                    loadUsers()
+                  }
+                }}
                 className="mt-1 block w-full px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               >
                 <option value="Interna">Interna</option>
@@ -893,21 +932,32 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, onClose, 
                 </div>
                 </div>
               ) : (
-                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-lg p-3 sm:p-4">
-                  <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-3">Solicitante</h4>
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/40 rounded-lg p-3 sm:p-4">
+                  <h4 className="text-sm font-semibold text-green-900 dark:text-green-200 mb-3">Solicitante Interno</h4>
                   <div>
-                    <label htmlFor="external_contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Solicitante
+                    <label htmlFor="requester_select" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Seleccionar Usuario del Sistema
                     </label>
-                    <input
-                      type="text"
-                      id="external_contact"
-                      value={formData.external_contact}
-                      onChange={(e) => setFormData({ ...formData, external_contact: e.target.value })}
-                      required
-                      className="mt-1 block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder="Ej: Juan Pérez"
-                    />
+                    {loadingUsers ? (
+                      <div className="mt-1 block w-full px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                        Cargando usuarios...
+                      </div>
+                    ) : (
+                      <select
+                        id="requester_select"
+                        value={formData.requester_id}
+                        onChange={(e) => setFormData({ ...formData, requester_id: e.target.value })}
+                        required
+                        className="mt-1 block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      >
+                        <option value="">-- Selecciona un usuario --</option>
+                        {availableUsers.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.name} ({user.email})
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 </div>
               )}
@@ -1793,21 +1843,18 @@ const TicketsView: React.FC<TicketsViewProps> = ({
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <h3 className="font-bold text-gray-900 dark:text-white text-sm md:text-base leading-tight pr-2">{ticket.title}</h3>
-                  {ticket.origin === 'Externa' ? (
+                  {/* Solo mostrar información de aliado externo cuando es Externa */}
+                  {ticket.origin === 'Externa' && ticket.external_company && (
                     <div className="mt-1 text-xs">
                       <p className="text-blue-600 dark:text-blue-400">
                         <span className="font-semibold">Aliado:</span> {ticket.external_company}
                       </p>
-                      <p className="text-blue-600 dark:text-blue-400">
-                        <span className="font-semibold">Solicitante:</span> {ticket.external_contact}
-                      </p>
+                      {ticket.external_contact && (
+                        <p className="text-blue-600 dark:text-blue-400">
+                          <span className="font-semibold">Solicitante:</span> {ticket.external_contact}
+                        </p>
+                      )}
                     </div>
-                  ) : (
-                    ticket.external_contact && (
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                        <span className="font-semibold">Solicitante:</span> {ticket.external_contact}
-                      </p>
-                    )
                   )}
                 </div>
                 <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg font-mono">#​{ticket.id.slice(0, 8)}</span>
@@ -1909,8 +1956,8 @@ const TicketsView: React.FC<TicketsViewProps> = ({
               </div>
             </div>
 
-            {/* Sección de Aliado Externo / Solicitante */}
-            {selectedTicket.origin === 'Externa' ? (
+            {/* Sección de Aliado Externo - Solo mostrar cuando origin es Externa */}
+            {selectedTicket.origin === 'Externa' && selectedTicket.external_company && (
               <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 mb-6">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                   <span className="text-xl mr-2">🤝</span>
@@ -1921,21 +1968,12 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                     <span className="text-sm text-gray-600 dark:text-gray-400">Empresa/Aliado:</span>
                     <p className="font-semibold text-gray-900 dark:text-white">{selectedTicket.external_company || 'N/A'}</p>
                   </div>
-                  <div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Solicitante:</span>
-                    <p className="font-semibold text-gray-900 dark:text-white">{selectedTicket.external_contact || 'N/A'}</p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 mb-6">
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                  <span className="text-xl mr-2">🧾</span>
-                  Información del Solicitante
-                </h4>
-                <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Solicitante:</span>
-                  <p className="font-semibold text-gray-900 dark:text-white">{selectedTicket.external_contact || 'N/A'}</p>
+                  {selectedTicket.external_contact && (
+                    <div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Solicitante:</span>
+                      <p className="font-semibold text-gray-900 dark:text-white">{selectedTicket.external_contact}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -3779,16 +3817,23 @@ const App: React.FC = () => {
       console.log("[v0] handleCreateTicket - Datos recibidos:", ticketData)
       console.log("[v0] handleCreateTicket - Attachments recibidos:", ticketData.attachments)
       
+      // Determinar el requester_id: si es interna y es personal TIC, usar el seleccionado, sino usar el usuario actual
+      let requesterId = currentUser.id
+      if (ticketData.origin === 'Interna' && currentUser.role !== Role.USER && ticketData.requester_id) {
+        // Personal TIC creando ticket interno para otro usuario
+        requesterId = ticketData.requester_id
+      }
+      
       const ticketToCreate = {
         title: ticketData.title,
         description: ticketData.description,
         priority: ticketData.priority,
         category: ticketData.category || 'Otro', // Categoría por defecto si no se proporciona
         assigned_to: ticketData.assigned_to,
-        requester_id: currentUser?.id,
+        requester_id: requesterId,
         origin: ticketData.origin || 'Interna',
-        external_company: ticketData.external_company || null,
-        external_contact: ticketData.external_contact || null,
+        external_company: ticketData.origin === 'Externa' ? (ticketData.external_company || null) : null,
+        external_contact: ticketData.origin === 'Externa' ? (ticketData.external_contact || null) : null,
       }
       console.log("[v0] handleCreateTicket - Creating ticket with data:", ticketToCreate)
       const newTicket = await ticketServiceClient.createTicket(ticketToCreate)

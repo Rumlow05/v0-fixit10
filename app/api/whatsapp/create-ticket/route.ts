@@ -71,24 +71,39 @@ export async function POST(request: NextRequest) {
 
     // Buscar usuario por email o crear usuario basado en WhatsApp ID
     let userId: string
+    let ticketOrigin: 'Interna' | 'Externa' = 'Externa'
+    let externalCompany: string | null = 'WhatsApp Bot'
+    let externalContact: string | null = ticketData.whatsapp_user_name || ticketData.whatsapp_user_id || null
     
     if (ticketData.requester_email) {
       // Buscar usuario existente por email
       const foundUserId = await findUserByEmail(ticketData.requester_email)
-      if (!foundUserId) {
-        return NextResponse.json({ 
-          error: "Usuario no encontrado",
-          message: `No se encontró un usuario registrado con el email: ${ticketData.requester_email}`,
-          suggestion: "Verifica que el usuario esté registrado en el sistema FixIT"
-        }, { status: 404 })
+      if (foundUserId) {
+        // El email está en el sistema, clasificar como Interna
+        userId = foundUserId
+        ticketOrigin = 'Interna'
+        externalCompany = null
+        externalContact = null
+      } else {
+        // El email NO está en el sistema, crear usuario con el email real y clasificar como Externa
+        userId = await createExternalUser(
+          ticketData.requester_email,
+          ticketData.whatsapp_user_name,
+          ticketData.whatsapp_user_id
+        )
+        ticketOrigin = 'Externa'
+        externalCompany = 'WhatsApp Bot'
+        externalContact = ticketData.whatsapp_user_name || ticketData.requester_email
       }
-      userId = foundUserId
     } else {
-      // Crear usuario basado en WhatsApp ID (comportamiento anterior)
+      // No hay email, crear usuario basado en WhatsApp ID y clasificar como Externa
       userId = await findOrCreateWhatsAppUser(
         ticketData.whatsapp_user_id!, 
         ticketData.whatsapp_user_name
       )
+      ticketOrigin = 'Externa'
+      externalCompany = 'WhatsApp Bot'
+      externalContact = ticketData.whatsapp_user_name || ticketData.whatsapp_user_id
     }
 
     // Preparar datos del ticket
@@ -98,9 +113,9 @@ export async function POST(request: NextRequest) {
       priority: mapPriority(ticketData.priority || ticketData.ai_classification?.priority || 'Media'),
       category: ticketData.category || ticketData.ai_classification?.category || 'WhatsApp',
       requester_id: userId,
-      origin: 'Externa' as const,
-      external_company: 'WhatsApp Bot',
-      external_contact: ticketData.whatsapp_user_name || ticketData.whatsapp_user_id,
+      origin: ticketOrigin,
+      external_company: externalCompany,
+      external_contact: externalContact,
     }
 
     // Crear ticket
@@ -197,7 +212,37 @@ async function findUserByEmail(email: string): Promise<string | null> {
   }
 }
 
-// Función auxiliar para encontrar o crear usuario de WhatsApp
+// Función auxiliar para crear usuario externo con email real
+async function createExternalUser(email: string, name?: string, whatsappId?: string): Promise<string> {
+  // Importar servicios de usuario
+  const { userServiceClient } = await import("@/services/userService")
+  
+  try {
+    // Verificar si ya existe un usuario con este email
+    const users = await userServiceClient.getAllUsers()
+    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase())
+    
+    if (existingUser) {
+      return existingUser.id
+    }
+    
+    // Crear nuevo usuario externo con el email real
+    const newUser = await userServiceClient.createUser({
+      name: name || email.split('@')[0],
+      email: email,
+      phone: whatsappId || null, // Guardar el WhatsApp ID si está disponible
+      role: 'Usuario' as any
+    })
+    
+    console.log(`[WhatsApp API] Usuario externo creado: ${email} -> ${newUser.id}`)
+    return newUser.id
+  } catch (error) {
+    console.error("[WhatsApp API] Error creating external user:", error)
+    throw new Error("Error al crear usuario externo")
+  }
+}
+
+// Función auxiliar para encontrar o crear usuario de WhatsApp (sin email)
 async function findOrCreateWhatsAppUser(whatsappId: string, name?: string): Promise<string> {
   // Importar servicios de usuario
   const { userServiceClient } = await import("@/services/userService")
