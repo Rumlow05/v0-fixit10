@@ -1698,8 +1698,51 @@ const TicketsView: React.FC<TicketsViewProps> = ({
 }) => {
   const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(false)
   
-  const getUserName = (id: string | undefined) =>
-    id ? users.find((u: User) => u.id === id)?.name || "Desconocido" : "Sin Asignar"
+  // Función para obtener el nombre del usuario, con mejor manejo para tickets internos
+  // Asegura que siempre muestre el nombre del solicitante cuando el ticket es interno
+  const getUserName = (id: string | undefined, ticket?: Ticket) => {
+    if (!id) return "Sin Asignar"
+    
+    // Primero, buscar en la lista de usuarios cargada
+    const user = users.find((u: User) => u.id === id)
+    if (user?.name) return user.name
+    
+    // Si no se encuentra y tenemos el ticket, buscar en la relación creator (desde la BD)
+    // Esto es útil cuando los datos vienen con relaciones cargadas
+    if (ticket) {
+      // Buscar por creator si está disponible
+      if ((ticket as any).creator?.name) {
+        // Verificar que el creator coincida con el ID buscado
+        const creatorId = (ticket as any).creator?.id || (ticket as any).created_by
+        if (creatorId === id) {
+          return (ticket as any).creator.name
+        }
+      }
+      
+      // También verificar si el requester_id del ticket coincide y tiene creator
+      if (ticket.requester_id === id && (ticket as any).creator?.name) {
+        return (ticket as any).creator.name
+      }
+    }
+    
+    // Si no encontramos el ticket actual, buscar en otros tickets
+    const foundTicket = tickets.find((t: Ticket) => {
+      if (!t) return false
+      // Buscar por requester_id o created_by
+      if (t.requester_id === id || (t as any).created_by === id) {
+        return true
+      }
+      return false
+    })
+    
+    if (foundTicket && (foundTicket as any).creator?.name) {
+      return (foundTicket as any).creator.name
+    }
+    
+    // Si aún no se encuentra, devolver "Desconocido" en lugar de N/A
+    // Esto asegura que siempre haya un valor legible
+    return "Desconocido"
+  }
   const isUserRole = currentUser?.role === Role.USER
   const canUseAI = currentUser ? [Role.LEVEL_1, Role.LEVEL_2, Role.ADMIN].includes(currentUser.role) : false
   // Permitir que Nivel 1, Nivel 2 y Admin puedan asignar tickets
@@ -1876,7 +1919,7 @@ const TicketsView: React.FC<TicketsViewProps> = ({
               </div>
               {!isUserRole && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                  <span className="font-medium">Solicitante:</span> {getUserName(ticket.requester_id)}
+                  <span className="font-medium">Solicitante:</span> {getUserName(ticket.requester_id, ticket)}
                 </p>
               )}
             </div>
@@ -1922,7 +1965,7 @@ const TicketsView: React.FC<TicketsViewProps> = ({
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Solicitante:</span>{" "}
-                    <span className="font-medium">{getUserName(selectedTicket.requester_id)}</span>
+                    <span className="font-medium">{getUserName(selectedTicket.requester_id, selectedTicket)}</span>
                   </div>
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Asignado a:</span>{" "}
